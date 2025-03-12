@@ -92,8 +92,9 @@ export function PendingTasks({ tasks, onCreateTask }: PendingTasksProps) {
         
         <button 
           onClick={onCreateTask}
-          className="w-full mt-2 py-2 text-sm font-medium text-primary hover:bg-primary-light hover:bg-opacity-10 rounded-md"
+          className="w-full mt-2 py-2 text-sm font-medium text-white bg-[hsl(155,45%,35%)] hover:bg-[hsl(155,45%,30%)] rounded-md flex items-center justify-center gap-1"
         >
+          <span className="material-icons text-sm">add</span>
           Create New Task
         </button>
       </div>

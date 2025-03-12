@@ -23,7 +23,15 @@ export default function Sidebar({ activePath }: SidebarProps) {
   ];
   
   return (
-    <aside className="w-56 bg-white border-r border-neutral-200 flex flex-col h-full">
+    <aside className="w-56 bg-[hsl(155,35%,18%)] flex flex-col h-full">
+      <div className="p-4 border-b border-[hsla(155,35%,25%,0.5)]">
+        <div className="flex items-center">
+          <div className="h-8 w-8 rounded-full bg-[hsl(155,60%,90%)] flex items-center justify-center text-[hsl(155,45%,35%)] font-bold">
+            B
+          </div>
+          <span className="ml-2 text-white text-lg font-semibold">Boon</span>
+        </div>
+      </div>
       <nav className="p-3 flex-1 overflow-y-auto scrollbar-thin">
         <ul className="space-y-1">
           {navItems.map((item) => (
@@ -33,8 +41,8 @@ export default function Sidebar({ activePath }: SidebarProps) {
                 className={cn(
                   "flex items-center px-3 py-2 text-sm rounded-md",
                   activePath === item.path
-                    ? "bg-primary-light bg-opacity-10 text-primary"
-                    : "hover:bg-neutral-100 text-neutral-500"
+                    ? "bg-[hsla(155,45%,90%,0.15)] text-white font-medium"
+                    : "hover:bg-[hsla(155,45%,90%,0.1)] text-[hsl(155,15%,80%)]"
                 )}
               >
                 <span className="material-icons mr-3 text-current">{item.icon}</span>
@@ -44,10 +52,10 @@ export default function Sidebar({ activePath }: SidebarProps) {
           ))}
         </ul>
       </nav>
-      <div className="p-3 border-t border-neutral-200">
+      <div className="p-3 border-t border-[hsla(155,35%,25%,0.5)]">
         <a 
           href="#help" 
-          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-neutral-100 text-neutral-500"
+          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-[hsla(155,45%,90%,0.1)] text-[hsl(155,15%,80%)]"
         >
           <span className="material-icons mr-3 text-current">help</span>
           Help & Support

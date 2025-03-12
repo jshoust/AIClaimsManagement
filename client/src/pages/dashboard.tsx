@@ -5,6 +5,7 @@ import { RecentClaims } from "@/components/dashboard/recent-claims";
 import { PendingTasks } from "@/components/dashboard/pending-tasks";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { CreateClaimModal } from "@/components/claims/create-claim-modal";
+import { CreateTaskModal } from "@/components/tasks/create-task-modal";
 import DetailPanel from "@/components/layout/detail-panel";
 import { useQuery } from "@tanstack/react-query";
 import { Claim, Task, Activity } from "@shared/schema";
@@ -15,7 +16,8 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ onSelectClaim, selectedClaimId }: DashboardProps) {
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreateClaimModalOpen, setIsCreateClaimModalOpen] = useState(false);
+  const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
   
   // Fetch claims data
   const { data: claims, isLoading: isLoadingClaims } = useQuery<Claim[]>({
@@ -68,8 +70,8 @@ export default function Dashboard({ onSelectClaim, selectedClaimId }: DashboardP
             <h2 className="text-2xl font-medium text-neutral-800">Dashboard</h2>
             <div className="flex gap-3">
               <Button 
-                onClick={() => setIsCreateModalOpen(true)}
-                className="flex items-center gap-1"
+                onClick={() => setIsCreateClaimModalOpen(true)}
+                className="flex items-center gap-1 bg-[hsl(155,45%,35%)] hover:bg-[hsl(155,45%,30%)]"
               >
                 <span className="material-icons text-sm">add</span>
                 New Claim
@@ -92,9 +94,9 @@ export default function Dashboard({ onSelectClaim, selectedClaimId }: DashboardP
             <SummaryCard
               title="Total Claims"
               value={summaryStats.totalClaims}
-              icon={<span className="material-icons text-primary">description</span>}
+              icon={<span className="material-icons text-[hsl(155,45%,35%)]">description</span>}
               change={{ value: "3.2%", isPositive: true }}
-              iconColor="bg-primary bg-opacity-10"
+              iconColor="bg-[hsl(155,45%,95%)]"
             />
             
             <SummaryCard
@@ -134,10 +136,7 @@ export default function Dashboard({ onSelectClaim, selectedClaimId }: DashboardP
             <div>
               <PendingTasks 
                 tasks={pendingTasks}
-                onCreateTask={() => {
-                  // Future enhancement: Add task creation modal
-                  alert("Task creation not implemented yet");
-                }}
+                onCreateTask={() => setIsCreateTaskModalOpen(true)}
               />
             </div>
           </div>
@@ -148,15 +147,22 @@ export default function Dashboard({ onSelectClaim, selectedClaimId }: DashboardP
         
         {/* Create Claim Modal */}
         <CreateClaimModal 
-          isOpen={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
+          isOpen={isCreateClaimModalOpen}
+          onClose={() => setIsCreateClaimModalOpen(false)}
+        />
+        
+        {/* Create Task Modal */}
+        <CreateTaskModal 
+          isOpen={isCreateTaskModalOpen}
+          onClose={() => setIsCreateTaskModalOpen(false)}
+          initialClaimId={selectedClaimId}
         />
       </main>
       
       {/* Detail Panel */}
       <DetailPanel 
         selectedClaimId={selectedClaimId}
-        onClose={() => onSelectClaim(null)}
+        onClose={() => onSelectClaim(0)}
       />
     </div>
   );
