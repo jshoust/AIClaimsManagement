@@ -1,3 +1,46 @@
+
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
+// Add print styling
+import { useEffect } from 'react';
+
+// Add print media CSS
+useEffect(() => {
+  const style = document.createElement('style');
+  style.innerHTML = `
+    @media print {
+      nav, header, footer, .no-print {
+        display: none !important;
+      }
+      body, html {
+        width: 100%;
+        height: auto;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+      }
+      .print-container {
+        width: 100% !important;
+        overflow: visible !important;
+      }
+      button {
+        display: none !important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+  
+  return () => {
+    document.head.removeChild(style);
+  };
+}, []);
+</new_str>
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -88,12 +131,16 @@ export default function Reports() {
   const pieData = reportType === 'status' ? getStatusData() : getClaimTypeData();
   
   return (
-    <main className="flex-1 overflow-y-auto scrollbar-thin p-6">
+    <main className="flex-1 overflow-y-auto scrollbar-thin p-6 print-container">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-medium text-neutral-800">Reports</h2>
           <div className="flex gap-3">
-            <Button variant="outline" className="flex items-center gap-1">
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-1"
+              onClick={() => window.print()}
+            >
               <span className="material-icons text-sm">print</span>
               Print Report
             </Button>
