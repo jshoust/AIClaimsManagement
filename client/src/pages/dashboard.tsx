@@ -27,8 +27,9 @@ export default function Dashboard({ onSelectClaim, selectedClaimId }: DashboardP
   });
   
   // Fetch tasks data
-  const { data: tasks, isLoading: isLoadingTasks } = useQuery<Task[]>({
+  const { data: tasks, isLoading: isLoadingTasks, refetch: refetchTasks } = useQuery<Task[]>({
     queryKey: ['/api/tasks'],
+    refetchInterval: 5000, // Refresh tasks every 5 seconds to ensure updates
   });
   
   // Fetch activities data
@@ -82,7 +83,15 @@ export default function Dashboard({ onSelectClaim, selectedClaimId }: DashboardP
                 variant="outline"
                 className="flex items-center gap-1"
                 onClick={() => {
-                  window.location.reload();
+                  // Refresh all data using React Query's refetch instead of full page reload
+                  queryClient.refetchQueries({ queryKey: ['/api/claims'] });
+                  queryClient.refetchQueries({ queryKey: ['/api/tasks'] });
+                  queryClient.refetchQueries({ queryKey: ['/api/activities'] });
+                  
+                  toast({
+                    title: "Data Refreshed",
+                    description: "All data has been refreshed from the server."
+                  });
                 }}
               >
                 <span className="material-icons text-sm">refresh</span>

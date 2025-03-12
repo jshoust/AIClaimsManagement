@@ -107,9 +107,6 @@ export default function DetailPanel({ selectedClaimId, onClose }: DetailPanelPro
               </div>
               <h4 className="text-neutral-500 font-medium">No claim selected</h4>
               <p className="text-sm text-neutral-400 mt-1">Select a claim to view details</p>
-              <Button className="mt-4">
-                Create New Claim
-              </Button>
             </div>
           </div>
         </div>

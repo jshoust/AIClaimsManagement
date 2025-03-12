@@ -61,7 +61,14 @@ export function CreateTaskModal({ isOpen, onClose, initialClaimId = null }: Crea
   
   const onSubmit = async (data: CreateTaskFormValues) => {
     try {
-      await apiRequest('POST', '/api/tasks', data);
+      // Make sure date is in YYYY-MM-DD format
+      const formattedData = {
+        ...data,
+        dueDate: data.dueDate.toISOString().split('T')[0],
+      };
+      
+      // Create the task
+      const newTask = await apiRequest('POST', '/api/tasks', formattedData);
       
       toast({
         title: "Task Created",
@@ -74,14 +81,20 @@ export function CreateTaskModal({ isOpen, onClose, initialClaimId = null }: Crea
       // Close modal
       onClose();
       
-      // Invalidate tasks query to refresh the list
+      // Force refresh the tasks list
       queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
       
-      // If the task is associated with a claim, invalidate the claim's tasks as well
+      // If the task is associated with a claim, invalidate those queries too
       if (data.claimId) {
         queryClient.invalidateQueries({ queryKey: ['/api/claims', data.claimId, 'tasks'] });
       }
+      
+      // Add a small delay then refetch to ensure the UI updates
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ['/api/tasks'] });
+      }, 200);
     } catch (error) {
+      console.error("Error creating task:", error);
       toast({
         title: "Error",
         description: "Failed to create task. Please try again.",
