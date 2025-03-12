@@ -1,4 +1,4 @@
-import { Task } from "@shared/schema";
+import { Task, Claim } from "@shared/schema";
 import { formatDate } from "@/lib/format-date";
 import { useQuery } from "@tanstack/react-query";
 
@@ -42,13 +42,13 @@ function getTaskTypeInfo(title: string) {
 
 export function PendingTasks({ tasks, onCreateTask }: PendingTasksProps) {
   // Load claims to associate with tasks
-  const { data: claims } = useQuery({
+  const { data: claims = [] } = useQuery<Claim[]>({
     queryKey: ['/api/claims'],
   });
   
   // Map claim ID to claim details
   const claimsMap = new Map();
-  if (claims) {
+  if (claims && Array.isArray(claims)) {
     claims.forEach((claim: any) => {
       claimsMap.set(claim.id, claim);
     });
