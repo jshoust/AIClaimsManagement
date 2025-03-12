@@ -167,12 +167,6 @@ export default function Claims({ onSelectClaim, selectedClaimId }: ClaimsProps) 
           onClose={() => setIsCreateModalOpen(false)}
         />
       </main>
-      
-      {/* Detail Panel */}
-      <DetailPanel 
-        selectedClaimId={selectedClaimId}
-        onClose={() => onSelectClaim(null)}
-      />
     </div>
   );
 }

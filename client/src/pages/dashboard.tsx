@@ -6,10 +6,10 @@ import { PendingTasks } from "@/components/dashboard/pending-tasks";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { CreateClaimModal } from "@/components/claims/create-claim-modal";
 import { CreateTaskModal } from "@/components/tasks/create-task-modal";
-import DetailPanel from "@/components/layout/detail-panel";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Claim, Task, Activity } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
 
 interface DashboardProps {
   onSelectClaim: (claimId: number) => void;
@@ -20,6 +20,8 @@ export default function Dashboard({ onSelectClaim, selectedClaimId }: DashboardP
   const [isCreateClaimModalOpen, setIsCreateClaimModalOpen] = useState(false);
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   // Fetch claims data
   const { data: claims, isLoading: isLoadingClaims } = useQuery<Claim[]>({
@@ -169,12 +171,6 @@ export default function Dashboard({ onSelectClaim, selectedClaimId }: DashboardP
           initialClaimId={selectedClaimId}
         />
       </main>
-      
-      {/* Detail Panel */}
-      <DetailPanel 
-        selectedClaimId={selectedClaimId}
-        onClose={() => onSelectClaim(0)}
-      />
     </div>
   );
 }
