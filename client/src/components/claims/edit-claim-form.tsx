@@ -42,19 +42,29 @@ export default function EditClaimForm({ claim, onClose }: EditClaimFormProps) {
   }, [claim?.id]);
   
   // Submit form to update claim
-  const handleSubmit = async (formData: any) => {
+  const handleSubmit = async (formData: any, isSaveProgress = false) => {
     setIsLoading(true);
     
     try {
-      // Update the claim while preserving the status
+      // Whether this is a "Save Progress" or "Submit" action
+      const isFinalSubmission = !isSaveProgress;
+      
+      // Update the claim while preserving the status for "Save Progress" 
+      // or updating to "in_review" for final submission
+      const updatedStatus = isFinalSubmission && claim.status === "new" 
+        ? "in_review" 
+        : claim.status;
+      
       await apiRequest('PATCH', `/api/claims/${claim.id}`, {
         ...formData,
-        status: claim.status
+        status: updatedStatus
       });
       
       toast({
-        title: "Claim Updated",
-        description: `Claim #${claim.claimNumber} has been updated successfully.`,
+        title: isFinalSubmission ? "Claim Submitted" : "Progress Saved",
+        description: isFinalSubmission
+          ? `Claim #${claim.claimNumber} has been submitted successfully.`
+          : `Your changes to claim #${claim.claimNumber} have been saved. You can continue editing later.`,
       });
       
       // Invalidate queries to refresh data
@@ -65,14 +75,16 @@ export default function EditClaimForm({ claim, onClose }: EditClaimFormProps) {
       await apiRequest('POST', '/api/activities', {
         claimId: claim.id,
         type: 'update',
-        description: 'Claim information updated',
+        description: isFinalSubmission ? 'Claim submitted' : 'Progress saved on claim',
         createdBy: 'System',
       });
       
       queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
       
-      // Close form
-      onClose();
+      // Close form only if it's a final submission
+      if (isFinalSubmission) {
+        onClose();
+      }
     } catch (error) {
       toast({
         title: "Error",

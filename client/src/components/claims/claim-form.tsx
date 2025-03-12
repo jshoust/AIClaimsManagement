@@ -60,7 +60,7 @@ export type ClaimFormValues = z.infer<typeof claimFormSchema>;
 
 interface ClaimFormProps {
   initialData?: Partial<Claim>;
-  onSubmit: (data: ClaimFormValues) => void;
+  onSubmit: (data: ClaimFormValues, isSaveProgress?: boolean) => void;
   onCancel: () => void;
   missingFields?: string[];
   isLoading?: boolean;
@@ -119,7 +119,8 @@ export function ClaimForm({
   });
   
   const handleSubmit = (data: ClaimFormValues) => {
-    onSubmit(data);
+    // When form is submitted via the form submit button, this is a final submission
+    onSubmit(data, false);
   };
   
   // Check if a field is missing
@@ -711,9 +712,24 @@ export function ClaimForm({
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Submitting..." : "Submit Claim"}
-            </Button>
+            <div className="flex gap-3">
+              <Button 
+                type="button" 
+                variant="secondary" 
+                onClick={() => {
+                  // We'll use the same handler but pass it the current form values
+                  const formValues = form.getValues();
+                  // Pass true as the second parameter to indicate this is a save progress action
+                  onSubmit(formValues, true);
+                }}
+                disabled={isLoading}
+              >
+                {isLoading ? "Saving..." : "Save Progress"}
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Submitting..." : "Submit Claim"}
+              </Button>
+            </div>
           </div>
         </div>
       </form>

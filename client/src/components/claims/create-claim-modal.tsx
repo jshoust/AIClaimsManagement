@@ -51,27 +51,48 @@ export function CreateClaimModal({ isOpen, onClose }: CreateClaimModalProps) {
     }
   });
   
-  const onSubmit = async (data: CreateClaimFormValues) => {
+  const onSubmit = async (data: CreateClaimFormValues, isSaveProgress = false) => {
     try {
-      await apiRequest('POST', '/api/claims', data);
+      // Determine the claim status based on the action
+      const status = isSaveProgress ? 'new' : 'in_review';
+      
+      // Add status to the submission data
+      const submissionData = {
+        ...data,
+        status
+      };
+      
+      const response = await apiRequest('POST', '/api/claims', submissionData);
       
       toast({
-        title: "Claim Created",
-        description: "The new claim has been created successfully",
+        title: isSaveProgress ? "Progress Saved" : "Claim Created",
+        description: isSaveProgress 
+          ? "The claim has been saved. You can continue editing later."
+          : "The new claim has been created successfully and is awaiting review.",
+      });
+      
+      // Create activity for the creation
+      await apiRequest('POST', '/api/activities', {
+        claimId: response.id,
+        type: 'create',
+        description: isSaveProgress ? 'Claim draft saved' : 'New claim submitted',
+        createdBy: 'System',
       });
       
       // Reset form
       form.reset();
       
-      // Close modal
-      onClose();
+      // Close modal only for final submission
+      if (!isSaveProgress) {
+        onClose();
+      }
       
       // Invalidate claims query to refresh the list
       queryClient.invalidateQueries({ queryKey: ['/api/claims'] });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to create claim. Please try again.",
+        description: `Failed to ${isSaveProgress ? 'save' : 'create'} claim. Please try again.`,
         variant: "destructive"
       });
     }
