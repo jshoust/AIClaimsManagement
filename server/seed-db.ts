@@ -164,7 +164,7 @@ export async function seedDatabase() {
     const [task2] = await db.insert(tasks).values({
       title: "Send claims data request email",
       description: "Email customer requesting additional information about the lost items",
-      dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // in 2 days
+      dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // in 2 days
       claimId: claim3.id,
       status: "pending",
       assignedTo: "David Brown"
@@ -173,7 +173,7 @@ export async function seedDatabase() {
     const [task3] = await db.insert(tasks).values({
       title: "Review state law applicability",
       description: "Check which state laws apply to this interstate shipment",
-      dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // in 3 days
+      dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // in 3 days
       claimId: claim2.id,
       status: "pending",
       assignedTo: "Mike Thompson"
@@ -182,7 +182,7 @@ export async function seedDatabase() {
     const [task4] = await db.insert(tasks).values({
       title: "Compile claims documentation packet",
       description: "Collect all documents and create claims packet for processing",
-      dueDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000), // in 4 days
+      dueDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // in 4 days
       claimId: claim5.id,
       status: "pending",
       assignedTo: "Sarah Johnson"
@@ -196,7 +196,7 @@ export async function seedDatabase() {
       type: ActivityType.EMAIL,
       description: "Email Sent: Missing Information Request",
       createdBy: "Sarah Johnson",
-      timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12 hours ago
+      timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12 hours ago
       metadata: {
         details: "Sent email to Acme Logistics requesting missing shipment details for claim #CLM-10001."
       }
@@ -207,7 +207,7 @@ export async function seedDatabase() {
       type: ActivityType.PHONE,
       description: "Phone Call: Claim Information",
       createdBy: "Mike Thompson",
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
       metadata: {
         details: "Called Global Shipping to discuss claim details and requirements for #CLM-10002."
       }
@@ -218,7 +218,7 @@ export async function seedDatabase() {
       type: ActivityType.DOCUMENT,
       description: "Document: Claim Form Received",
       createdBy: "David Brown",
-      timestamp: new Date(Date.now() - 36 * 60 * 60 * 1000), // 1.5 days ago
+      timestamp: new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString(), // 1.5 days ago
       metadata: {
         details: "Received completed claim form from FastTrack Delivery for claim #CLM-10003."
       }
@@ -229,7 +229,7 @@ export async function seedDatabase() {
       type: ActivityType.STATUS_UPDATE,
       description: "Status Update: Claim Finalized",
       createdBy: "Jessica Williams",
-      timestamp: new Date(Date.now() - 48 * 60 * 60 * 1000), // 2 days ago
+      timestamp: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(), // 2 days ago
       metadata: {
         details: "Claim #CLM-10004 for Metro Distribution has been finalized and approved.",
         oldStatus: "in_review",
