@@ -101,13 +101,13 @@ export default function DocumentPreview({ document }: DocumentPreviewProps) {
             <div className="aspect-[4/3] relative bg-neutral-50">
               {document.fileType.includes('pdf') ? (
                 <iframe 
-                  src={`${previewUrl}#toolbar=0&navpanes=0`} 
+                  src={previewUrl ? `${previewUrl}#toolbar=0&navpanes=0` : ''}
                   className="absolute inset-0 w-full h-full"
                   title={document.fileName}
                 ></iframe>
               ) : (
                 <img 
-                  src={previewUrl} 
+                  src={previewUrl || ''}
                   alt={document.fileName} 
                   className="absolute inset-0 w-full h-full object-contain p-4"
                 />

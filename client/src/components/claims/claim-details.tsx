@@ -21,6 +21,8 @@ export default function ClaimDetails({ claimId, onClose }: ClaimDetailsProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<string>("details");
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<any>(null);
   
   // Fetch claim details
   const { data: claim, isLoading: isLoadingClaim } = useQuery({
@@ -184,58 +186,107 @@ export default function ClaimDetails({ claimId, onClose }: ClaimDetailsProps) {
         </TabsContent>
         
         <TabsContent value="documents" className="pt-6">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Documents</CardTitle>
-                <Button size="sm" className="flex items-center gap-1">
-                  <span className="material-icons text-sm">upload_file</span>
-                  Add Document
-                </Button>
-              </div>
-              <CardDescription>Documents associated with this claim</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingDocuments ? (
-                <div className="py-8 flex justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              ) : documents.length === 0 ? (
-                <div className="text-center py-8 text-neutral-500">
-                  No documents found for this claim
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {documents.map((doc: any) => (
-                    <div key={doc.id} className="border rounded-md p-3">
-                      <div className="flex items-start gap-3">
-                        <div className="h-10 w-10 rounded-md bg-primary bg-opacity-10 flex items-center justify-center flex-shrink-0">
-                          <span className="material-icons text-primary">{getFileIcon(doc.fileType)}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium text-neutral-800 truncate">{doc.fileName}</h4>
-                          <div className="flex justify-between items-center mt-1">
-                            <span className="text-xs text-neutral-500">{doc.fileType.toUpperCase()}</span>
-                            <span className="text-xs text-neutral-500">{formatDate(doc.uploadedAt)}</span>
-                          </div>
-                          <div className="mt-2 flex gap-2">
-                            <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
-                              <span className="material-icons text-xs mr-1">visibility</span>
-                              View
-                            </Button>
-                            <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
-                              <span className="material-icons text-xs mr-1">download</span>
-                              Download
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2">
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <CardTitle>Documents</CardTitle>
+                    <Button 
+                      size="sm" 
+                      className="flex items-center gap-1"
+                      onClick={() => setIsUploadDialogOpen(true)}
+                    >
+                      <span className="material-icons text-sm">upload_file</span>
+                      Add Document
+                    </Button>
+                  </div>
+                  <CardDescription>Documents associated with this claim</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingDocuments ? (
+                    <div className="py-8 flex justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                     </div>
-                  ))}
-                </div>
+                  ) : documents.length === 0 ? (
+                    <div className="text-center py-8 text-neutral-500">
+                      <div className="h-16 w-16 mx-auto rounded-full bg-neutral-100 flex items-center justify-center mb-3">
+                        <span className="material-icons text-neutral-400 text-3xl">description</span>
+                      </div>
+                      <p className="font-medium text-neutral-600">No documents found</p>
+                      <p className="text-sm text-neutral-500 mt-1">Upload documents to associate with this claim</p>
+                      <Button 
+                        onClick={() => setIsUploadDialogOpen(true)} 
+                        className="mt-4"
+                      >
+                        <span className="material-icons text-sm mr-1">upload_file</span>
+                        Upload Document
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {documents.map((doc: any) => (
+                        <div 
+                          key={doc.id} 
+                          className={`border rounded-md p-3 cursor-pointer transition hover:bg-neutral-50 ${selectedDocument?.id === doc.id ? 'border-primary bg-primary/5' : ''}`}
+                          onClick={() => setSelectedDocument(doc)}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="h-10 w-10 rounded-md bg-primary bg-opacity-10 flex items-center justify-center flex-shrink-0">
+                              <span className="material-icons text-primary">{getFileIcon(doc.fileType)}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-medium text-neutral-800 truncate">{doc.fileName}</h4>
+                              <div className="flex justify-between items-center mt-1">
+                                <span className="text-xs text-neutral-500">{doc.fileType.toUpperCase()}</span>
+                                <span className="text-xs text-neutral-500">{formatDate(doc.uploadedAt)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div>
+              {selectedDocument ? (
+                <DocumentPreview document={selectedDocument} />
+              ) : (
+                <Card className="w-full">
+                  <CardContent className="p-6">
+                    <div className="flex flex-col items-center justify-center h-40 text-center">
+                      <div className="h-16 w-16 rounded-full bg-neutral-100 flex items-center justify-center mb-3">
+                        <span className="material-icons text-neutral-400 text-3xl">description</span>
+                      </div>
+                      <h4 className="text-neutral-500 font-medium">No document selected</h4>
+                      <p className="text-sm text-neutral-400 mt-1">Select a document to view details</p>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+          
+          {/* Document Upload Dialog */}
+          <DocumentUpload 
+            isOpen={isUploadDialogOpen} 
+            onClose={() => setIsUploadDialogOpen(false)}
+            claims={[claim] as any}
+            initialClaimId={claim?.id}
+            onSuccess={(data) => {
+              // If a document was uploaded and analysis was performed
+              if (data.document) {
+                // Set the newly uploaded document as selected
+                setSelectedDocument(data.document);
+                
+                // Refresh claims data to get any updated missing information
+                queryClient.invalidateQueries({ queryKey: ['/api/claims', claimId] });
+              }
+            }}
+          />
         </TabsContent>
         
         <TabsContent value="activities" className="pt-6">
