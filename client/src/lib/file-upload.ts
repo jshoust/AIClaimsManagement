@@ -1,10 +1,11 @@
 import { Document } from "@shared/schema";
 
 /**
- * Document upload response interface including analysis result
+ * Document upload response interface including analysis result and potentially a created claim
  */
 export interface DocumentUploadResponse {
   document: Document;
+  claim?: any; // Newly created claim (if document upload triggered claim creation)
   analysisResult?: {
     missingInformation: string[];
     extractedData: {

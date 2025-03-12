@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Claims from "@/pages/claims";
+import ClaimView from "@/pages/claim-view";
 import EmailIntegration from "@/pages/email-integration";
 import DatabaseSearch from "@/pages/database-search";
 import Documents from "@/pages/documents";
@@ -35,6 +36,7 @@ function Router() {
             path="/claims" 
             component={() => <Claims onSelectClaim={setSelectedClaimId} selectedClaimId={selectedClaimId} />} 
           />
+          <Route path="/claims/:id" component={ClaimView} />
           <Route path="/email-integration" component={EmailIntegration} />
           <Route path="/database-search" component={DatabaseSearch} />
           <Route path="/documents" component={Documents} />
