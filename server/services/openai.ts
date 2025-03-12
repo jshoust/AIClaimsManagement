@@ -154,30 +154,38 @@ export async function analyzePDFDocument(filePath: string): Promise<DocumentAnal
         } else {
           console.warn("PDF text extraction returned empty content");
           
-          // For scanned PDFs or image-based PDFs, we need a different approach
-          // Convert the PDF to base64 and try image analysis
-          const base64Data = dataBuffer.toString('base64');
-          
-          // Use image-based analysis as fallback
-          return analyzeImageDocument(base64Data);
+          // Return generic analysis for now - image processing requires different handling
+          return {
+            missingInformation: ["Document requires manual review - text extraction failed"],
+            extractedData: {
+              description: "PDF document uploaded, but text extraction failed"
+            },
+            summary: "Document requires manual content extraction"
+          };
         }
       } catch (parseError) {
         console.error("Error parsing PDF content:", parseError);
         
-        // If PDF parsing fails, try image-based analysis
-        const fileBuffer = fs.readFileSync(filePath);
-        const base64Data = fileBuffer.toString('base64');
-        
-        return analyzeImageDocument(base64Data);
+        // Return basic analysis since image analysis is failing
+        return {
+          missingInformation: ["Document requires manual review - PDF parsing failed"],
+          extractedData: {
+            description: "PDF document uploaded, but parsing failed"
+          },
+          summary: "Document requires manual content extraction"
+        };
       }
     } catch (importError) {
       console.error("Error importing pdf-parse:", importError);
       
-      // If we can't import pdf-parse, convert the file to base64 and use image analysis
-      const fileBuffer = fs.readFileSync(filePath);
-      const base64Data = fileBuffer.toString('base64');
-      
-      return analyzeImageDocument(base64Data);
+      // Return basic analysis
+      return {
+        missingInformation: ["Document requires manual review - PDF processing unavailable"],
+        extractedData: {
+          description: "PDF document uploaded, but processing tools unavailable"
+        },
+        summary: "Document requires manual content extraction"
+      };
     }
   } catch (error: any) {
     console.error("Error in analyzePDFDocument:", error);
@@ -192,114 +200,27 @@ export async function analyzePDFDocument(filePath: string): Promise<DocumentAnal
 }
 
 /**
- * Analyzes a document image
+ * Placeholder for future image document analysis
+ * Currently returns a generic response instructing manual review
+ * 
  * @param imageBase64 Base64-encoded image data
- * @returns Analysis result
+ * @returns Analysis result with generic response
  */
 export async function analyzeImageDocument(imageBase64: string): Promise<DocumentAnalysisResult> {
-  try {
-    const prompt = `
-    You are an expert claims analyst for Boon AI Claims Processing.
-    
-    Please analyze the following claim form image and provide a detailed analysis with the following information:
-    
-    1. Identify any missing information that would be required to process the claim properly. Every empty or incomplete field should be listed.
-    2. Extract all key information from the claim in a structured format.
-    3. Provide a brief summary of the claim.
-    
-    The important fields to check for are:
-    - Customer/Company name
-    - Contact person
-    - Email address
-    - Phone number
-    - Address (Line 1, Line 2, City, State, Zip, Country)
-    - Order number
-    - Purchase date
-    - Product details (Name, SKU, Quantity)
-    - Claim amount
-    - Claim type
-    - Description of the claim/damage
-    - Preferred resolution
-    - Date of incident
-    
-    Consider any empty or incomplete field as missing information.
-    
-    Respond with JSON in the following format:
-    {
-      "missingInformation": ["string array of missing information items"],
-      "extractedData": {
-        "customerName": "string",
-        "contactPerson": "string",
-        "email": "string",
-        "phone": "string",
-        "orderNumber": "string",
-        "claimAmount": "string",
-        "claimType": "string",
-        "description": "string",
-        
-        "addressLine1": "string",
-        "addressLine2": "string",
-        "city": "string",
-        "state": "string",
-        "zipCode": "string",
-        "country": "string",
-        
-        "purchaseDate": "string",
-        "productName": "string",
-        "productSku": "string",
-        "productQuantity": "string",
-        
-        "damageDescription": "string",
-        "preferredResolution": "string",
-        "dateOfIncident": "string"
-      },
-      "summary": "string summary of the claim"
-    }
-    `;
-
-    const response = await openai.chat.completions.create({
-      model: MODEL,
-      messages: [
-        { role: "system", content: "You are a claims analysis assistant for Boon Claims Management with expertise in extracting information from claim forms." },
-        { 
-          role: "user", 
-          content: [
-            { 
-              type: "text", 
-              text: prompt 
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:image/application/pdf;base64,${imageBase64}`
-              }
-            }
-          ]
-        }
-      ],
-      response_format: { type: "json_object" }
-    });
-
-    const content = response.choices[0].message.content || "{}";
-    
-    try {
-      const result = JSON.parse(content) as DocumentAnalysisResult;
-      return {
-        missingInformation: result.missingInformation || [],
-        extractedData: result.extractedData || {},
-        summary: result.summary || "No summary available"
-      };
-    } catch (jsonError) {
-      console.error("Error parsing JSON from OpenAI response:", jsonError);
-      // If JSON parsing fails, return a basic structure
-      return {
-        missingInformation: ["Could not parse document properly"],
-        extractedData: {},
-        summary: "Failed to properly analyze document format"
-      };
-    }
-  } catch (error: any) {
-    console.error("Error analyzing image with OpenAI:", error);
-    throw new Error(`Failed to analyze image document: ${error.message || 'Unknown error'}`);
-  }
+  console.log("Image analysis requested but currently disabled");
+  
+  // Return a generic response for now
+  return {
+    missingInformation: [
+      "Document requires manual review",
+      "Customer contact information",
+      "Claim details",
+      "Damage description",
+      "Order information"
+    ],
+    extractedData: {
+      description: "This document was uploaded as an image or scanned PDF and requires manual review."
+    },
+    summary: "Document requires manual extraction of information. A task has been created to review this document."
+  };
 }

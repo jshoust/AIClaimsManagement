@@ -275,11 +275,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (file.mimetype === 'application/pdf') {
         try {
+          console.log("Processing PDF document:", file.path);
+          
           // Process the document with OpenAI
           analysisResult = await analyzePDFDocument(file.path);
+          console.log("Analysis result:", JSON.stringify(analysisResult, null, 2));
           
           // If no claim is associated, create a new claim based on analysis
-          if (!claimId && analysisResult.extractedData) {
+          if (!claimId && analysisResult && analysisResult.extractedData) {
             const extractedData = analysisResult.extractedData;
             
             // Generate a unique claim number
