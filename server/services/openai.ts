@@ -124,31 +124,59 @@ export async function analyzeDocument(text: string): Promise<DocumentAnalysisRes
  */
 export async function analyzePDFDocument(filePath: string): Promise<DocumentAnalysisResult> {
   try {
-    // Import pdf-parse dynamically to avoid issues in environments where it's not available
-    const pdfParse = await import('pdf-parse');
+    if (!fs.existsSync(filePath)) {
+      console.error(`PDF file not found at path: ${filePath}`);
+      return {
+        missingInformation: ["PDF file not found or inaccessible"],
+        extractedData: {},
+        summary: "Could not access the PDF document"
+      };
+    }
     
-    // Read the PDF file as buffer
-    const dataBuffer = fs.readFileSync(filePath);
-    
-    // Parse PDF to extract text
-    const pdfData = await pdfParse.default(dataBuffer);
-    
-    // Get the text content
-    const pdfText = pdfData.text;
-    
-    // If text extraction was successful
-    if (pdfText && pdfText.length > 0) {
-      console.log("Successfully extracted text from PDF, length: " + pdfText.length);
-      return analyzeDocument(pdfText);
-    } else {
-      console.warn("PDF text extraction returned empty content");
+    try {
+      // Import pdf-parse dynamically to avoid issues in environments where it's not available
+      const pdfParse = await import('pdf-parse');
       
-      // For scanned PDFs or image-based PDFs, we need a different approach
-      // Convert the PDF to base64 and try image analysis
+      // Read the PDF file as buffer
+      const dataBuffer = fs.readFileSync(filePath);
+      
+      try {
+        // Parse PDF to extract text
+        const pdfData = await pdfParse.default(dataBuffer);
+        
+        // Get the text content
+        const pdfText = pdfData.text;
+        
+        // If text extraction was successful
+        if (pdfText && pdfText.length > 0) {
+          console.log("Successfully extracted text from PDF, length: " + pdfText.length);
+          return analyzeDocument(pdfText);
+        } else {
+          console.warn("PDF text extraction returned empty content");
+          
+          // For scanned PDFs or image-based PDFs, we need a different approach
+          // Convert the PDF to base64 and try image analysis
+          const base64Data = dataBuffer.toString('base64');
+          
+          // Use image-based analysis as fallback
+          return analyzeImageDocument(base64Data);
+        }
+      } catch (parseError) {
+        console.error("Error parsing PDF content:", parseError);
+        
+        // If PDF parsing fails, try image-based analysis
+        const fileBuffer = fs.readFileSync(filePath);
+        const base64Data = fileBuffer.toString('base64');
+        
+        return analyzeImageDocument(base64Data);
+      }
+    } catch (importError) {
+      console.error("Error importing pdf-parse:", importError);
+      
+      // If we can't import pdf-parse, convert the file to base64 and use image analysis
       const fileBuffer = fs.readFileSync(filePath);
       const base64Data = fileBuffer.toString('base64');
       
-      // Use image-based analysis as fallback
       return analyzeImageDocument(base64Data);
     }
   } catch (error: any) {

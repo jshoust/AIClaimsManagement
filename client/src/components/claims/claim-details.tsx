@@ -9,6 +9,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EditClaimForm from "./edit-claim-form";
 import { apiRequest } from "@/lib/queryClient";
+import DocumentPreview from "../documents/document-preview";
+import DocumentUpload from "../documents/document-upload";
 
 interface ClaimDetailsProps {
   claimId: number;
