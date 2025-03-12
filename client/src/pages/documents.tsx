@@ -338,11 +338,14 @@ export default function Documents() {
                         variant="outline" 
                         className="w-full flex items-center gap-1"
                         onClick={() => {
-                          if (selectedDocument) {
-                            const link = document.createElement('a');
-                            link.href = `/uploads/${selectedDocument.fileName}`;
-                            link.download = selectedDocument.fileName;
-                            link.click();
+                          if (selectedDocument && selectedDocument.filePath) {
+                            const filenameMatch = selectedDocument.filePath.match(/[^/\\]+$/);
+                            if (filenameMatch) {
+                              const link = document.createElement('a');
+                              link.href = `/uploads/${filenameMatch[0]}`;
+                              link.download = selectedDocument.fileName;
+                              link.click();
+                            }
                           }
                         }}
                       >
@@ -445,10 +448,15 @@ export default function Documents() {
                                 size="sm" 
                                 className="h-8 w-8 p-0"
                                 onClick={() => {
-                                  const link = document.createElement('a');
-                                  link.href = `/uploads/${doc.fileName}`;
-                                  link.download = doc.fileName;
-                                  link.click();
+                                  if (doc.filePath) {
+                                    const filenameMatch = doc.filePath.match(/[^/\\]+$/);
+                                    if (filenameMatch) {
+                                      const link = document.createElement('a');
+                                      link.href = `/uploads/${filenameMatch[0]}`;
+                                      link.download = doc.fileName;
+                                      link.click();
+                                    }
+                                  }
                                 }}
                               >
                                 <span className="material-icons text-primary">download</span>
