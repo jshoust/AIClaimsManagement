@@ -1,0 +1,299 @@
+import type { Express, Request, Response } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { insertClaimSchema, insertTaskSchema, insertActivitySchema, insertDocumentSchema } from "@shared/schema";
+import { z, ZodError } from "zod";
+import { fromZodError } from "zod-validation-error";
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // API routes with /api prefix
+  const apiRouter = app.route('/api');
+  
+  // Claims routes
+  app.get('/api/claims', async (req: Request, res: Response) => {
+    try {
+      const claims = await storage.getClaims();
+      res.json(claims);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch claims" });
+    }
+  });
+  
+  app.get('/api/claims/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const claim = await storage.getClaim(id);
+      
+      if (!claim) {
+        return res.status(404).json({ message: "Claim not found" });
+      }
+      
+      res.json(claim);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch claim" });
+    }
+  });
+  
+  app.post('/api/claims', async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertClaimSchema.parse(req.body);
+      const claim = await storage.createClaim(validatedData);
+      
+      // Create activity for the new claim
+      await storage.createActivity({
+        claimId: claim.id,
+        type: "status_update",
+        description: "Claim Created",
+        createdBy: claim.assignedTo || "System",
+        metadata: {
+          details: `New claim #${claim.claimNumber} created for ${claim.customerName}`
+        }
+      });
+      
+      res.status(201).json(claim);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid claim data", 
+          errors: fromZodError(error).message 
+        });
+      }
+      res.status(500).json({ message: "Failed to create claim" });
+    }
+  });
+  
+  app.patch('/api/claims/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const claim = await storage.getClaim(id);
+      
+      if (!claim) {
+        return res.status(404).json({ message: "Claim not found" });
+      }
+      
+      const updatedClaim = await storage.updateClaim(id, req.body);
+      
+      // Create activity for status update if status changed
+      if (req.body.status && req.body.status !== claim.status) {
+        await storage.createActivity({
+          claimId: id,
+          type: "status_update",
+          description: `Status Update: ${req.body.status}`,
+          createdBy: req.body.assignedTo || claim.assignedTo || "System",
+          metadata: {
+            details: `Claim #${claim.claimNumber} status updated from ${claim.status} to ${req.body.status}`,
+            oldStatus: claim.status,
+            newStatus: req.body.status
+          }
+        });
+      }
+      
+      res.json(updatedClaim);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update claim" });
+    }
+  });
+  
+  // Tasks routes
+  app.get('/api/tasks', async (req: Request, res: Response) => {
+    try {
+      const tasks = await storage.getTasks();
+      res.json(tasks);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch tasks" });
+    }
+  });
+  
+  app.get('/api/claims/:claimId/tasks', async (req: Request, res: Response) => {
+    try {
+      const claimId = parseInt(req.params.claimId);
+      const tasks = await storage.getTasksByClaim(claimId);
+      res.json(tasks);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch tasks for claim" });
+    }
+  });
+  
+  app.post('/api/tasks', async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertTaskSchema.parse(req.body);
+      const task = await storage.createTask(validatedData);
+      res.status(201).json(task);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid task data", 
+          errors: fromZodError(error).message 
+        });
+      }
+      res.status(500).json({ message: "Failed to create task" });
+    }
+  });
+  
+  app.patch('/api/tasks/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const task = await storage.getTask(id);
+      
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      const updatedTask = await storage.updateTask(id, req.body);
+      res.json(updatedTask);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update task" });
+    }
+  });
+  
+  // Activities routes
+  app.get('/api/activities', async (req: Request, res: Response) => {
+    try {
+      const activities = await storage.getActivities();
+      res.json(activities);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch activities" });
+    }
+  });
+  
+  app.get('/api/claims/:claimId/activities', async (req: Request, res: Response) => {
+    try {
+      const claimId = parseInt(req.params.claimId);
+      const activities = await storage.getActivitiesByClaim(claimId);
+      res.json(activities);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch activities for claim" });
+    }
+  });
+  
+  app.post('/api/activities', async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertActivitySchema.parse(req.body);
+      const activity = await storage.createActivity(validatedData);
+      res.status(201).json(activity);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid activity data", 
+          errors: fromZodError(error).message 
+        });
+      }
+      res.status(500).json({ message: "Failed to create activity" });
+    }
+  });
+  
+  // Documents routes
+  app.get('/api/documents', async (req: Request, res: Response) => {
+    try {
+      const documents = await storage.getDocuments();
+      res.json(documents);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch documents" });
+    }
+  });
+  
+  app.get('/api/claims/:claimId/documents', async (req: Request, res: Response) => {
+    try {
+      const claimId = parseInt(req.params.claimId);
+      const documents = await storage.getDocumentsByClaim(claimId);
+      res.json(documents);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch documents for claim" });
+    }
+  });
+  
+  app.post('/api/documents', async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertDocumentSchema.parse(req.body);
+      const document = await storage.createDocument(validatedData);
+      res.status(201).json(document);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid document data", 
+          errors: fromZodError(error).message 
+        });
+      }
+      res.status(500).json({ message: "Failed to create document" });
+    }
+  });
+  
+  // Email templates routes
+  app.get('/api/email-templates', async (req: Request, res: Response) => {
+    try {
+      const templates = await storage.getEmailTemplates();
+      res.json(templates);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch email templates" });
+    }
+  });
+  
+  // State laws routes
+  app.get('/api/state-laws', async (req: Request, res: Response) => {
+    try {
+      const laws = await storage.getStateLaws();
+      res.json(laws);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch state laws" });
+    }
+  });
+  
+  app.get('/api/state-laws/:state', async (req: Request, res: Response) => {
+    try {
+      const state = req.params.state;
+      const law = await storage.getStateLawByState(state);
+      
+      if (!law) {
+        return res.status(404).json({ message: "State law not found" });
+      }
+      
+      res.json(law);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch state law" });
+    }
+  });
+
+  // Mock email sending endpoint (in a real app, this would connect to a mail service)
+  app.post('/api/send-email', async (req: Request, res: Response) => {
+    try {
+      const schema = z.object({
+        to: z.string().email(),
+        subject: z.string(),
+        body: z.string(),
+        claimId: z.number().optional()
+      });
+      
+      const { to, subject, body, claimId } = schema.parse(req.body);
+      
+      // In a real implementation, this would send an actual email
+      // For now, we'll just create an activity record
+      if (claimId) {
+        await storage.createActivity({
+          claimId,
+          type: "email",
+          description: `Email Sent: ${subject}`,
+          createdBy: "System",
+          metadata: {
+            to,
+            subject,
+            body,
+            details: `Email sent to ${to}`
+          }
+        });
+      }
+      
+      res.json({ message: "Email sent successfully" });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid email data", 
+          errors: fromZodError(error).message 
+        });
+      }
+      res.status(500).json({ message: "Failed to send email" });
+    }
+  });
+  
+  const httpServer = createServer(app);
+  return httpServer;
+}
