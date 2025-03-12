@@ -74,6 +74,14 @@ export default function Claims({ onSelectClaim, selectedClaimId }: ClaimsProps) 
             <h2 className="text-2xl font-medium text-neutral-800">Claims</h2>
             <div className="flex gap-3">
               <Button 
+                variant="outline"
+                onClick={() => window.open('/Claim_Form.pdf', '_blank')}
+                className="flex items-center gap-1"
+              >
+                <span className="material-icons text-sm">file_download</span>
+                Download Blank Form
+              </Button>
+              <Button 
                 onClick={() => setIsCreateModalOpen(true)}
                 className="flex items-center gap-1"
               >
