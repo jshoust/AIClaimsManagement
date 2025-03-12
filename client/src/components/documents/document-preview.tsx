@@ -41,7 +41,14 @@ export default function DocumentPreview({ document }: DocumentPreviewProps) {
 
   const openDocument = () => {
     if (previewUrl) {
-      window.open(previewUrl, '_blank');
+      // Check if the file exists first
+      const link = window.document.createElement('a');
+      link.href = previewUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      window.document.body.appendChild(link);
+      link.click();
+      window.document.body.removeChild(link);
     }
   };
 
@@ -49,8 +56,10 @@ export default function DocumentPreview({ document }: DocumentPreviewProps) {
     if (previewUrl) {
       const link = window.document.createElement('a');
       link.href = previewUrl;
-      link.download = document.fileName;
+      link.download = document.fileName; // This is the Document parameter type, not the global document
+      window.document.body.appendChild(link);
       link.click();
+      window.document.body.removeChild(link);
     }
   };
 

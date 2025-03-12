@@ -25,8 +25,13 @@ export default function ClaimDetails({ claimId, onClose }: ClaimDetailsProps) {
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
   
   // Fetch claim details
-  const { data: claim, isLoading: isLoadingClaim } = useQuery({
+  const { data: claim = {}, isLoading: isLoadingClaim } = useQuery({
     queryKey: ['/api/claims', claimId],
+    queryFn: async () => {
+      const data = await apiRequest<Claim>('GET', `/api/claims/${claimId}`);
+      console.log("Fetched claim data:", data);
+      return data;
+    },
     enabled: !!claimId,
   });
   
@@ -34,9 +39,9 @@ export default function ClaimDetails({ claimId, onClose }: ClaimDetailsProps) {
   const { data: documents = [], isLoading: isLoadingDocuments } = useQuery({
     queryKey: ['/api/claims', claimId, 'documents'],
     queryFn: async () => {
-      const res = await fetch(`/api/claims/${claimId}/documents`);
-      if (!res.ok) throw new Error('Failed to fetch documents');
-      return res.json();
+      const data = await apiRequest('GET', `/api/claims/${claimId}/documents`);
+      console.log("Fetched documents:", data);
+      return data;
     },
     enabled: !!claimId,
   });
@@ -45,9 +50,8 @@ export default function ClaimDetails({ claimId, onClose }: ClaimDetailsProps) {
   const { data: activities = [], isLoading: isLoadingActivities } = useQuery({
     queryKey: ['/api/claims', claimId, 'activities'],
     queryFn: async () => {
-      const res = await fetch(`/api/claims/${claimId}/activities`);
-      if (!res.ok) throw new Error('Failed to fetch activities');
-      return res.json();
+      const data = await apiRequest('GET', `/api/claims/${claimId}/activities`);
+      return data;
     },
     enabled: !!claimId,
   });
@@ -56,47 +60,46 @@ export default function ClaimDetails({ claimId, onClose }: ClaimDetailsProps) {
   const { data: tasks = [], isLoading: isLoadingTasks } = useQuery({
     queryKey: ['/api/claims', claimId, 'tasks'],
     queryFn: async () => {
-      const res = await fetch(`/api/claims/${claimId}/tasks`);
-      if (!res.ok) throw new Error('Failed to fetch tasks');
-      return res.json();
+      const data = await apiRequest('GET', `/api/claims/${claimId}/tasks`);
+      return data;
     },
     enabled: !!claimId,
   });
   
   // Function to send follow-up email
   const sendFollowUpEmail = async () => {
-    if (!claim) return;
+    if (!claim || Object.keys(claim).length === 0) return;
     
     try {
       // Format missing information as bullet points
-      const missingItems = (claim.missingInformation as string[])
+      const missingItems = ((claim.missingInformation as string[]) || [])
         .map(item => `• ${item}`)
         .join('\n');
       
       // Replace placeholders in email template
       const emailBody = 
-        `Dear ${claim.contactPerson},\n\n` +
-        `We are processing your claim #${claim.claimNumber} but need additional information to proceed. Please provide the following:\n\n` +
+        `Dear ${claim.contactPerson || 'Customer'},\n\n` +
+        `We are processing your claim #${claim.claimNumber || 'Unknown'} but need additional information to proceed. Please provide the following:\n\n` +
         `${missingItems}\n\n` +
         `Thank you,\nWard TLC Claims Department`;
       
       await apiRequest('POST', '/api/send-email', {
-        to: claim.email,
-        subject: `Missing Information for Claim #${claim.claimNumber}`,
+        to: claim.email || '',
+        subject: `Missing Information for Claim #${claim.claimNumber || 'Unknown'}`,
         body: emailBody,
         claimId: claim.id
       });
       
       toast({
         title: "Email Sent",
-        description: `Follow-up email sent to ${claim.contactPerson}`,
+        description: `Follow-up email sent to ${claim.contactPerson || 'Customer'}`,
       });
       
       // Create activity log for email
       await apiRequest('POST', '/api/activities', {
         claimId: claim.id,
         type: 'email',
-        description: `Follow-up email sent to ${claim.contactPerson}`,
+        description: `Follow-up email sent to ${claim.contactPerson || 'Customer'}`,
         createdBy: 'John Doe',
       });
       
