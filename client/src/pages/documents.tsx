@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,10 @@ import { Document } from "@shared/schema";
 import { formatDate } from "@/lib/format-date";
 import { uploadFile } from "@/lib/file-upload";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
+         AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useDocuments } from "@/hooks/use-documents";
 
 export default function Documents() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -18,14 +21,14 @@ export default function Documents() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedClaimId, setSelectedClaimId] = useState<number | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Fetch documents data
-  const { data: documents, isLoading } = useQuery<Document[]>({
-    queryKey: ['/api/documents'],
-  });
+  // Use documents hook
+  const { documents: documentsQuery, deleteDocument } = useDocuments();
+  const { data: documents, isLoading } = documentsQuery;
   
   // Fetch claims data to associate with documents
   const { data: claims = [] } = useQuery<any[]>({
