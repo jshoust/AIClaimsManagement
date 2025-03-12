@@ -134,17 +134,30 @@ export function WardClaimForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         {/* Header with Ward logo */}
-        <div className="bg-green-800 text-white p-4 rounded-t-lg">
+        <div className="bg-white p-4 rounded-t-lg border border-gray-200">
           <div className="flex justify-between items-center">
-            <h1 className="text-xl font-bold">TO: WARD TRUCKING CORP</h1>
-            <img 
-              src="/client/public/ward-logo.png" 
-              alt="Ward Trucking Logo" 
-              className="h-8" 
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }} 
-            />
+            <div className="flex-shrink-0">
+              <img 
+                src="/images/ward-claim-form.png" 
+                alt="Ward Trucking Logo" 
+                className="w-64 object-contain" 
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const parentDiv = e.currentTarget.parentElement;
+                  if (parentDiv) {
+                    const textElement = document.createElement('div');
+                    textElement.className = "text-green-800 font-bold text-2xl";
+                    textElement.innerText = "WARD TRUCKING";
+                    parentDiv.appendChild(textElement);
+                  }
+                }}
+              />
+            </div>
+            <div className="font-bold text-sm text-gray-700">
+              <div>P.O Box 1553</div>
+              <div>Altoona, PA 16603-1553</div>
+              <div>814-944-0803 FAX 814-944-2369</div>
+            </div>
           </div>
         </div>
         
@@ -207,168 +220,244 @@ export function WardClaimForm({
           />
         </div>
         
-        {/* Claim Amount and Type */}
+        {/* Claim Amount and Type Section */}
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <h2 className="text-lg font-bold mb-4 text-green-800">CLAIM AMOUNT AND TYPE</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="claimAmount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Claim Amount ($)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter dollar amount" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
+          <div className="mb-4">
+            <p className="text-sm font-medium">This claim for $
+              <FormField
+                control={form.control}
+                name="claimAmount"
+                render={({ field }) => (
+                  <span className="inline-block">
+                    <FormControl>
+                      <Input 
+                        placeholder="Amount" 
+                        className="w-32 inline mx-2" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage className="block text-xs mt-1" />
+                  </span>
+                )}
+              />
+              is made against Ward in connection with the following described shipment:
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-4 ml-8 mb-2">
             <FormField
               control={form.control}
               name="claimType"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Claim Type</FormLabel>
-                  <Select 
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      setClaimTypeValue(value);
-                    }}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select claim type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Shortage">Shortage</SelectItem>
-                      <SelectItem value="Damage">Damage</SelectItem>
-                      <SelectItem value="Loss">Loss</SelectItem>
-                      <SelectItem value="Delay">Delay</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={field.value === "Shortage"}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          field.onChange("Shortage");
+                          setClaimTypeValue("Shortage");
+                        }
+                      }}
+                      id="shortage-checkbox"
+                    />
+                    <label
+                      htmlFor="shortage-checkbox"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      shortage
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={field.value === "Damage"}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          field.onChange("Damage");
+                          setClaimTypeValue("Damage");
+                        }
+                      }}
+                      id="damage-checkbox"
+                    />
+                    <label
+                      htmlFor="damage-checkbox"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      damage
+                    </label>
+                  </div>
+                </div>
               )}
             />
           </div>
+          <FormMessage className="ml-8 text-xs" />
         </div>
         
-        {/* Shipper Information */}
+        {/* Shipper and Consignee Information - Side by Side */}
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <h2 className="text-lg font-bold mb-4 text-green-800">SHIPPER INFORMATION</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="shipperName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Shipper Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter shipper name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Shipper Information */}
+            <div>
+              <h2 className="font-bold mb-4 text-gray-800 text-sm underline">Shipper:</h2>
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="shipperName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm">Name:</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter shipper name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="shipperAddress"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm">Address:</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Enter shipper address" 
+                          className="resize-none min-h-[80px]"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="shipperPhone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm">Phone:</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter shipper phone" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
             
-            <FormField
-              control={form.control}
-              name="shipperPhone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Shipper Phone</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter shipper phone" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="shipperAddress"
-              render={({ field }) => (
-                <FormItem className="col-span-1 md:col-span-2">
-                  <FormLabel>Shipper Address</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Enter shipper address" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-        
-        {/* Consignee Information */}
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <h2 className="text-lg font-bold mb-4 text-green-800">CONSIGNEE INFORMATION</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="consigneeName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Consignee Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter consignee name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="consigneePhone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Consignee Phone</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter consignee phone" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="consigneeAddress"
-              render={({ field }) => (
-                <FormItem className="col-span-1 md:col-span-2">
-                  <FormLabel>Consignee Address</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Enter consignee address" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Consignee Information */}
+            <div>
+              <h2 className="font-bold mb-4 text-gray-800 text-sm underline">Consignee:</h2>
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="consigneeName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm">Name:</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter consignee name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="consigneeAddress"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm">Address:</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Enter consignee address" 
+                          className="resize-none min-h-[80px]"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="consigneePhone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm">Phone:</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter consignee phone" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
           </div>
         </div>
         
         {/* Detailed Claim Statement */}
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <h2 className="text-lg font-bold mb-4 text-green-800">DETAILED STATEMENT</h2>
+          <h2 className="text-center font-bold mb-1 text-gray-800 text-sm">Detailed Statement Showing How Amount Claimed Was Determined</h2>
+          <p className="text-xs text-gray-600 mb-4 italic">
+            (Number and description of articles, nature and extent of shortage or damage, invoice price of articles, amount of claim, etc. All discount and allowances must be shown. Use an additional sheet as needed.)
+          </p>
+          
           <FormField
             control={form.control}
             name="detailedStatement"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Detailed description of claim:</FormLabel>
                 <FormControl>
-                  <Textarea 
-                    placeholder="Enter a detailed description of your claim including all relevant information" 
-                    className="h-32"
-                    {...field}
-                  />
+                  <div className="border border-gray-300 rounded-md">
+                    <div className="grid grid-cols-5 border-b">
+                      <div className="col-span-4 border-r py-2 px-4 bg-gray-100">
+                        <span className="text-sm font-medium">Item Details</span>
+                      </div>
+                      <div className="col-span-1 py-2 px-4 bg-gray-100">
+                        <span className="text-sm font-medium">Amount</span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-5 border-b">
+                      <div className="col-span-4 border-r p-2">
+                        <Textarea 
+                          placeholder="Enter article details and description" 
+                          className="border-0 focus-visible:ring-0 resize-none min-h-[120px]"
+                          {...field}
+                        />
+                      </div>
+                      <div className="col-span-1 p-2">
+                        <Input 
+                          type="text"
+                          className="h-full border-0 focus-visible:ring-0"
+                          placeholder="$0.00"
+                          value={form.watch('claimAmount')} 
+                          disabled
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-5 border-b">
+                      <div className="col-span-4 border-r p-2 text-right">
+                        <span className="font-bold">Total Amount Claimed:</span>
+                      </div>
+                      <div className="col-span-1 p-2">
+                        <Input 
+                          type="text"
+                          className="border-0 focus-visible:ring-0 font-bold"
+                          value={form.watch('claimAmount') ? `$${form.watch('claimAmount')}` : '$0.00'} 
+                          disabled
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -378,27 +467,26 @@ export function WardClaimForm({
         
         {/* Supporting Documents */}
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <h2 className="text-lg font-bold mb-4 text-green-800">SUPPORTING DOCUMENTS</h2>
-          <p className="mb-4 text-sm text-gray-600">The following documents are required to process your claim. Please check which ones are attached:</p>
+          <p className="mb-2 text-sm text-gray-800">The following documents are submitted in support of this claim:</p>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
             <FormField
               control={form.control}
               name="originalBillOfLading"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                <div className="flex items-center">
                   <FormControl>
                     <Checkbox
+                      id="bill-of-lading"
                       checked={field.value}
                       onCheckedChange={field.onChange}
+                      className="mr-2"
                     />
                   </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>
-                      Original Bill of Lading
-                    </FormLabel>
-                  </div>
-                </FormItem>
+                  <label htmlFor="bill-of-lading" className="text-sm cursor-pointer">
+                    Original Bill of Lading *
+                  </label>
+                </div>
               )}
             />
             
@@ -406,19 +494,21 @@ export function WardClaimForm({
               control={form.control}
               name="originalFreightBill"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                <div className="flex items-start">
                   <FormControl>
                     <Checkbox
+                      id="freight-bill"
                       checked={field.value}
                       onCheckedChange={field.onChange}
+                      className="mr-2 mt-1"
                     />
                   </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>
-                      Original Freight Bill
-                    </FormLabel>
-                  </div>
-                </FormItem>
+                  <label htmlFor="freight-bill" className="text-sm cursor-pointer">
+                    Original paid freight bill or other carrier document bearing notation of shortage or damage
+                    <br />
+                    <span className="text-xs ml-4">if not shown on freight bill *</span>
+                  </label>
+                </div>
               )}
             />
             
@@ -426,21 +516,97 @@ export function WardClaimForm({
               control={form.control}
               name="originalInvoice"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                <div className="flex items-center">
                   <FormControl>
                     <Checkbox
+                      id="invoice"
                       checked={field.value}
                       onCheckedChange={field.onChange}
+                      className="mr-2"
                     />
                   </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>
-                      Original Invoice
-                    </FormLabel>
-                  </div>
-                </FormItem>
+                  <label htmlFor="invoice" className="text-sm cursor-pointer">
+                    Original invoice or certified copy as billed by seller *
+                  </label>
+                </div>
               )}
             />
+            
+            {claimTypeValue === "Damage" && (
+              <div className="flex items-center pt-2">
+                <span className="text-sm mr-2">Is merchandise repairable?</span>
+                <div className="flex items-center space-x-2">
+                  <FormField
+                    control={form.control}
+                    name="merchandiseRepairable"
+                    render={({ field }) => (
+                      <div className="flex items-center space-x-8">
+                        <div className="flex items-center">
+                          <FormControl>
+                            <Checkbox
+                              id="repairable-yes"
+                              checked={field.value === "Yes"}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  field.onChange("Yes");
+                                  setIsRepairable(true);
+                                }
+                              }}
+                              className="mr-1"
+                            />
+                          </FormControl>
+                          <label htmlFor="repairable-yes" className="text-sm cursor-pointer">
+                            Yes
+                          </label>
+                        </div>
+                        
+                        <div className="flex items-center">
+                          <FormControl>
+                            <Checkbox
+                              id="repairable-no"
+                              checked={field.value === "No"}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  field.onChange("No");
+                                  setIsRepairable(false);
+                                }
+                              }}
+                              className="mr-1"
+                            />
+                          </FormControl>
+                          <label htmlFor="repairable-no" className="text-sm cursor-pointer">
+                            No
+                          </label>
+                        </div>
+                        
+                        {isRepairable && (
+                          <div className="flex items-center">
+                            <span className="text-sm">Estimated cost to repair</span>
+                            <FormField
+                              control={form.control}
+                              name="repairCost"
+                              render={({ field }) => (
+                                <FormControl>
+                                  <Input
+                                    placeholder="$0.00"
+                                    className="w-24 h-8 ml-2"
+                                    {...field}
+                                  />
+                                </FormControl>
+                              )}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="mt-4 text-sm italic">
+            <p>Note: Please retain salvage until claim has been resolved.</p>
           </div>
           
           <div className="mt-4 p-4 border rounded-md bg-blue-50">
@@ -451,57 +617,7 @@ export function WardClaimForm({
           </div>
         </div>
         
-        {/* Merchandise Repairable Section - show only for damage claims */}
-        {claimTypeValue === "Damage" && (
-          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <h2 className="text-lg font-bold mb-4 text-green-800">DAMAGED MERCHANDISE</h2>
-            
-            <FormField
-              control={form.control}
-              name="merchandiseRepairable"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Is the merchandise repairable?</FormLabel>
-                  <Select 
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      setIsRepairable(value === "Yes");
-                    }}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select yes or no" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Yes">Yes</SelectItem>
-                      <SelectItem value="No">No</SelectItem>
-                      <SelectItem value="Unknown">Unknown</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            {isRepairable && (
-              <FormField
-                control={form.control}
-                name="repairCost"
-                render={({ field }) => (
-                  <FormItem className="mt-4">
-                    <FormLabel>Repair Cost ($)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter repair cost" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-          </div>
-        )}
+
         
         {/* Claimant Information */}
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
