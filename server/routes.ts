@@ -7,6 +7,7 @@ import { fromZodError } from "zod-validation-error";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { analyzePDFDocument, DocumentAnalysisResult } from "./services/openai";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes with /api prefix
@@ -282,12 +283,148 @@ export async function registerRoutes(app: Express): Promise<Server> {
             details: `Document uploaded by ${uploadedBy}`
           }
         });
+        
+        // If it's a PDF file, analyze it automatically
+        let analysisResult = null;
+        if (file.mimetype === 'application/pdf') {
+          try {
+            // Process the document with OpenAI
+            analysisResult = await analyzePDFDocument(file.path);
+            
+            // If associated with a claim, update claim with any missing information
+            if (claimId && analysisResult.missingInformation && analysisResult.missingInformation.length > 0) {
+              await storage.updateClaim(claimId, { 
+                missingInformation: analysisResult.missingInformation 
+              });
+              
+              // Create activity for missing information
+              await storage.createActivity({
+                claimId,
+                type: "analysis",
+                description: "Document Analysis: Missing Information Found",
+                createdBy: "Boon AI",
+                metadata: {
+                  documentId: document.id,
+                  missingInformation: analysisResult.missingInformation,
+                  details: `Boon AI identified missing information in document: ${analysisResult.missingInformation.join(', ')}`
+                }
+              });
+            }
+            
+            // If there are extracted data fields that can be used to update the claim
+            if (claimId && analysisResult.extractedData) {
+              const extractedData = analysisResult.extractedData;
+              const updateData: any = {};
+              
+              // Only update fields that are empty in the claim
+              const claim = await storage.getClaim(claimId);
+              if (claim) {
+                if (!claim.customerName && extractedData.customerName) updateData.customerName = extractedData.customerName;
+                if (!claim.contactPerson && extractedData.contactPerson) updateData.contactPerson = extractedData.contactPerson;
+                if (!claim.email && extractedData.email) updateData.email = extractedData.email;
+                if (!claim.phone && extractedData.phone) updateData.phone = extractedData.phone;
+                if (!claim.orderNumber && extractedData.orderNumber) updateData.orderNumber = extractedData.orderNumber;
+                if (!claim.claimAmount && extractedData.claimAmount) updateData.claimAmount = extractedData.claimAmount;
+                if (!claim.claimType && extractedData.claimType) updateData.claimType = extractedData.claimType;
+                if (!claim.description && extractedData.description) updateData.description = extractedData.description;
+                
+                // Update claim if there are fields to update
+                if (Object.keys(updateData).length > 0) {
+                  await storage.updateClaim(claimId, updateData);
+                  
+                  // Create activity for data extraction
+                  await storage.createActivity({
+                    claimId,
+                    type: "analysis",
+                    description: "Document Analysis: Data Extracted",
+                    createdBy: "Boon AI",
+                    metadata: {
+                      documentId: document.id,
+                      extractedData: updateData,
+                      details: `Boon AI extracted and updated claim data from document`
+                    }
+                  });
+                }
+              }
+            }
+          } catch (analysisError) {
+            console.error("Error analyzing document:", analysisError);
+            // Don't fail the whole request if analysis fails
+          }
+        }
+        
+        // Return both the document and analysis result if available
+        if (analysisResult) {
+          res.status(201).json({
+            document,
+            analysisResult
+          });
+        } else {
+          res.status(201).json({
+            document
+          });
+        }
+      } else {
+        res.status(201).json({
+          document
+        });
       }
-      
-      res.status(201).json(document);
     } catch (error) {
       console.error("File upload error:", error);
       res.status(500).json({ message: "Failed to upload document" });
+    }
+  });
+  
+  // Document analysis endpoint for existing documents
+  app.post('/api/documents/:id/analyze', async (req: Request, res: Response) => {
+    try {
+      const documentId = parseInt(req.params.id);
+      const document = await storage.getDocument(documentId);
+      
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+      
+      if (!document.filePath || !fs.existsSync(document.filePath)) {
+        return res.status(400).json({ message: "Document file not found" });
+      }
+      
+      // Only support PDF analysis for now
+      if (!document.fileType.includes('pdf')) {
+        return res.status(400).json({ message: "Only PDF documents can be analyzed" });
+      }
+      
+      // Process the document with OpenAI
+      const analysisResult = await analyzePDFDocument(document.filePath);
+      
+      // If associated with a claim, update claim with any missing information
+      if (document.claimId && analysisResult.missingInformation && analysisResult.missingInformation.length > 0) {
+        await storage.updateClaim(document.claimId, { 
+          missingInformation: analysisResult.missingInformation 
+        });
+        
+        // Create activity for missing information
+        await storage.createActivity({
+          claimId: document.claimId,
+          type: "analysis",
+          description: "Document Analysis: Missing Information Found",
+          createdBy: "Boon AI",
+          metadata: {
+            documentId: document.id,
+            missingInformation: analysisResult.missingInformation,
+            details: `Boon AI identified missing information in document: ${analysisResult.missingInformation.join(', ')}`
+          }
+        });
+      }
+      
+      res.json({
+        documentId: document.id,
+        fileName: document.fileName,
+        analysisResult
+      });
+    } catch (error) {
+      console.error("Document analysis error:", error);
+      res.status(500).json({ message: "Failed to analyze document" });
     }
   });
   
