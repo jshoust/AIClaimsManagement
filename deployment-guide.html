@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Boon AI Claims Processing - Deployment Guide</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      color: #155e75;
+      border-bottom: 2px solid #155e75;
+      padding-bottom: 10px;
+    }
+    h2 {
+      color: #0e7490;
+      margin-top: 30px;
+    }
+    h3 {
+      color: #0891b2;
+    }
+    code {
+      background-color: #f0f0f0;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-family: 'Courier New', Courier, monospace;
+    }
+    pre {
+      background-color: #f0f0f0;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .file-structure {
+      font-family: 'Courier New', Courier, monospace;
+      white-space: pre;
+      line-height: 1.4;
+    }
+    .important {
+      background-color: #ffedea;
+      border-left: 4px solid #ff5533;
+      padding: 15px;
+      margin: 25px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #f0f8ff;
+    }
+    .step {
+      background-color: #f8f9fa;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <h1>Boon AI Claims Processing - Deployment Guide</h1>
+  
+  <div class="important">
+    <strong>Important:</strong> This guide provides instructions for deploying the Boon AI Claims Processing application to your company's directory.
+  </div>
+
+  <h2>Prerequisites</h2>
+  <ul>
+    <li>Node.js (v16+) installed on your server</li>
+    <li>PostgreSQL database server</li>
+    <li>OpenAI API key for document analysis features</li>
+  </ul>
+
+  <h2>Required Files for Deployment</h2>
+  
+  <p>You need to upload the entire project directory to your server. The main directories and files include:</p>
+
+  <div class="file-structure">
+├── client/              # Frontend React application
+│   ├── public/          # Static files including Claim_Form.pdf
+│   ├── src/             # React source code
+│   └── index.html       # Main HTML file
+├── server/              # Backend Express server
+│   ├── services/        # Business logic services
+│   └── index.ts         # Server entry point
+├── shared/              # Shared code between client and server
+│   └── schema.ts        # Database schema definitions
+├── uploads/             # Directory for uploaded files
+├── package.json         # Project dependencies
+└── drizzle.config.ts    # Database configuration
+  </div>
+
+  <h2>Key Files Required for Operation</h2>
+
+  <table>
+    <tr>
+      <th>File Path</th>
+      <th>Purpose</th>
+      <th>Required For</th>
+    </tr>
+    <tr>
+      <td>client/public/Claim_Form.pdf</td>
+      <td>Ward Trucking blank claim form template</td>
+      <td>Download functionality</td>
+    </tr>
+    <tr>
+      <td>package.json</td>
+      <td>Project dependencies and scripts</td>
+      <td>Installation and running</td>
+    </tr>
+    <tr>
+      <td>server/index.ts</td>
+      <td>Backend server entry point</td>
+      <td>API functionality</td>
+    </tr>
+    <tr>
+      <td>server/db.ts</td>
+      <td>Database connection setup</td>
+      <td>Database access</td>
+    </tr>
+    <tr>
+      <td>shared/schema.ts</td>
+      <td>Database schema definitions</td>
+      <td>Data structure and validation</td>
+    </tr>
+  </table>
+
+  <h2>Deployment Steps</h2>
+
+  <div class="step">
+    <h3>Step 1: Upload the Files</h3>
+    <p>Upload all project files to your company's web directory, maintaining the folder structure.</p>
+  </div>
+
+  <div class="step">
+    <h3>Step 2: Install Dependencies</h3>
+    <p>Run the following command in the project root directory:</p>
+    <pre><code>npm install</code></pre>
+  </div>
+
+  <div class="step">
+    <h3>Step 3: Set Up Environment Variables</h3>
+    <p>Create a .env file in the project root with the following variables:</p>
+    <pre><code>DATABASE_URL=postgres://username:password@hostname:port/database_name
+OPENAI_API_KEY=your_openai_api_key</code></pre>
+  </div>
+
+  <div class="step">
+    <h3>Step 4: Initialize the Database</h3>
+    <p>Run the database migration and seed:</p>
+    <pre><code>npm run db:push</code></pre>
+  </div>
+
+  <div class="step">
+    <h3>Step 5: Build the Frontend</h3>
+    <p>Build the React frontend:</p>
+    <pre><code>npm run build</code></pre>
+  </div>
+
+  <div class="step">
+    <h3>Step 6: Start the Application</h3>
+    <p>Start the application server:</p>
+    <pre><code>npm run start</code></pre>
+    <p>The application should now be accessible at http://your-server-address:5000</p>
+  </div>
+
+  <h2>Important Assets</h2>
+  <p>These assets must be properly placed for full functionality:</p>
+  <ul>
+    <li><strong>Claim_Form.pdf</strong> - Ward Trucking claim form template, must be in the client/public directory</li>
+    <li><strong>Boon logo and word.png</strong> - Brand logo used in the application header</li>
+  </ul>
+
+  <h2>Database Configuration</h2>
+  <p>The application uses PostgreSQL with Drizzle ORM. The database schema includes tables for:</p>
+  <ul>
+    <li>Users - User accounts and profiles</li>
+    <li>Claims - Claim details and status</li>
+    <li>Tasks - Follow-up tasks for claims</li>
+    <li>Activities - Tracking of claim activities</li>
+    <li>Documents - Uploaded files and analysis results</li>
+    <li>Email Templates - Templates for automated emails</li>
+    <li>State Laws - Reference data for state-specific laws</li>
+  </ul>
+
+  <h2>Additional Integration Notes</h2>
+  <ul>
+    <li>The app integrates with OpenAI for document analysis - ensure your API key has adequate permissions</li>
+    <li>Document storage is configured to save to the local filesystem in the uploads directory</li>
+    <li>Email functionality requires proper SMTP configuration if used in production</li>
+  </ul>
+
+  <h2>Support</h2>
+  <p>For any deployment issues or questions, contact your system administrator or the development team.</p>
+
+  <div class="important">
+    <strong>Security Note:</strong> Ensure proper file permissions are set for uploaded documents and sensitive configuration files.
+  </div>
+
+</body>
+</html>

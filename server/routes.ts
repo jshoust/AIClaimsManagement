@@ -8,6 +8,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { analyzePDFDocument, DocumentAnalysisResult } from "./services/openai";
+import { generateClaimInsights, predictClaimOutcome } from "./services/ai-insights";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes with /api prefix

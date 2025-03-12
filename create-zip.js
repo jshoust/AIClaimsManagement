@@ -34,7 +34,8 @@ const filesToInclude = [
   'tailwind.config.ts', 
   'postcss.config.js',
   'vite.config.ts',
-  'drizzle.config.ts'
+  'drizzle.config.ts',
+  '.env.example'
 ];
 
 // Add the directories recursively
