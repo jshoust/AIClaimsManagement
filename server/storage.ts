@@ -10,6 +10,8 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, asc, desc } from "drizzle-orm";
+import path from "path";
+import fs from "fs";
 
 // Interface for all storage operations
 export interface IStorage {
@@ -24,6 +26,7 @@ export interface IStorage {
   getClaimByNumber(claimNumber: string): Promise<Claim | undefined>;
   createClaim(claim: InsertClaim): Promise<Claim>;
   updateClaim(id: number, claim: Partial<Claim>): Promise<Claim | undefined>;
+  deleteClaim(id: number): Promise<boolean>;
   
   // Task operations
   getTasks(): Promise<Task[]>;
@@ -44,6 +47,7 @@ export interface IStorage {
   getDocumentsByClaim(claimId: number): Promise<Document[]>;
   createDocument(document: InsertDocument): Promise<Document>;
   updateDocument(id: number, document: Partial<Document>): Promise<Document | undefined>;
+  deleteDocument(id: number): Promise<boolean>;
   
   // Email template operations
   getEmailTemplates(): Promise<EmailTemplate[]>;
@@ -114,6 +118,22 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return updatedClaim;
+  }
+  
+  async deleteClaim(id: number): Promise<boolean> {
+    try {
+      // First, delete related records (tasks, activities, documents)
+      await db.delete(tasks).where(eq(tasks.claimId, id));
+      await db.delete(activities).where(eq(activities.claimId, id));
+      await db.delete(documents).where(eq(documents.claimId, id));
+      
+      // Then delete the claim itself
+      const result = await db.delete(claims).where(eq(claims.id, id));
+      return result.rowCount ? result.rowCount > 0 : true;
+    } catch (error) {
+      console.error('Error deleting claim:', error);
+      return false;
+    }
   }
   
   // Task operations
@@ -223,6 +243,31 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return updatedDocument;
+  }
+  
+  async deleteDocument(id: number): Promise<boolean> {
+    try {
+      // Get the document file path before deleting
+      const document = await this.getDocument(id);
+      
+      if (document && document.filePath) {
+        // Try to delete the file from the filesystem
+        try {
+          const fullPath = path.join(process.cwd(), document.filePath);
+          fs.unlinkSync(fullPath);
+        } catch (err) {
+          console.error('Error deleting document file:', err);
+          // Continue with the database deletion even if file deletion fails
+        }
+      }
+      
+      // Delete the document from the database
+      const result = await db.delete(documents).where(eq(documents.id, id));
+      return result.rowCount ? result.rowCount > 0 : true;
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      return false;
+    }
   }
   
   // Email template operations
