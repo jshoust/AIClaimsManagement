@@ -178,8 +178,11 @@ export function CreateTaskModal({ isOpen, onClose, initialClaimId = null }: Crea
                   <FormItem>
                     <FormLabel>Assigned To</FormLabel>
                     <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value || ""} 
+                      onValueChange={(value) => {
+                        // If "unassigned" was selected, set to null, otherwise use the value
+                        field.onChange(value === "unassigned" ? null : value);
+                      }} 
+                      value={field.value || "unassigned"} 
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -187,7 +190,7 @@ export function CreateTaskModal({ isOpen, onClose, initialClaimId = null }: Crea
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Unassigned</SelectItem>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
                         <SelectItem value="Sarah Johnson">Sarah Johnson</SelectItem>
                         <SelectItem value="Mike Thompson">Mike Thompson</SelectItem>
                         <SelectItem value="Jessica Williams">Jessica Williams</SelectItem>
@@ -207,8 +210,11 @@ export function CreateTaskModal({ isOpen, onClose, initialClaimId = null }: Crea
                 <FormItem>
                   <FormLabel>Associated Claim</FormLabel>
                   <Select 
-                    onValueChange={(value) => field.onChange(value ? Number(value) : null)} 
-                    value={field.value?.toString() || ""} 
+                    onValueChange={(value) => {
+                      // If "none" was selected, set to null, otherwise convert to number
+                      field.onChange(value === "none" ? null : Number(value));
+                    }} 
+                    value={field.value?.toString() || "none"} 
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -216,7 +222,7 @@ export function CreateTaskModal({ isOpen, onClose, initialClaimId = null }: Crea
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No associated claim</SelectItem>
+                      <SelectItem value="none">No associated claim</SelectItem>
                       {claims.map((claim: any) => (
                         <SelectItem key={claim.id} value={claim.id.toString()}>
                           {claim.claimNumber} - {claim.customerName}
