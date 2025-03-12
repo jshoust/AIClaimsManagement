@@ -31,7 +31,8 @@ export default function Dashboard({ onSelectClaim, selectedClaimId }: DashboardP
   // Fetch tasks data
   const { data: tasks, isLoading: isLoadingTasks, refetch: refetchTasks } = useQuery<Task[]>({
     queryKey: ['/api/tasks'],
-    refetchInterval: 5000, // Refresh tasks every 5 seconds to ensure updates
+    refetchInterval: 3000, // Refresh tasks more frequently to ensure updates
+    refetchOnWindowFocus: true, // Refetch when the window gains focus
   });
   
   // Fetch activities data

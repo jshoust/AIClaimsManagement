@@ -91,8 +91,12 @@ export function CreateTaskModal({ isOpen, onClose, initialClaimId = null }: Crea
       
       // Add a small delay then refetch to ensure the UI updates
       setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
         queryClient.refetchQueries({ queryKey: ['/api/tasks'] });
-      }, 200);
+        // Also refetch activities since a new task creates an activity
+        queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
+        queryClient.refetchQueries({ queryKey: ['/api/activities'] });
+      }, 300);
     } catch (error) {
       console.error("Error creating task:", error);
       toast({

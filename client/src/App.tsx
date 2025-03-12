@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Claims from "@/pages/claims";
 import ClaimView from "@/pages/claim-view";
+import Tasks from "@/pages/tasks";
 import EmailIntegration from "@/pages/email-integration";
 import DatabaseSearch from "@/pages/database-search";
 import Documents from "@/pages/documents";
