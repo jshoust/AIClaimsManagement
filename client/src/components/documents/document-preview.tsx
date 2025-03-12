@@ -100,11 +100,24 @@ export default function DocumentPreview({ document }: DocumentPreviewProps) {
           <div className="overflow-hidden rounded-md border border-neutral-200 mb-4">
             <div className="aspect-[4/3] relative bg-neutral-50">
               {document.fileType.includes('pdf') ? (
-                <iframe 
-                  src={previewUrl ? `${previewUrl}#toolbar=0&navpanes=0` : ''}
+                <object
+                  data={previewUrl || ''}
+                  type="application/pdf"
                   className="absolute inset-0 w-full h-full"
                   title={document.fileName}
-                ></iframe>
+                >
+                  <div className="absolute inset-0 flex items-center justify-center flex-col">
+                    <p className="text-sm text-neutral-500 mb-2">PDF preview not loading?</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={openDocument}
+                      className="text-xs"
+                    >
+                      Open PDF in new tab
+                    </Button>
+                  </div>
+                </object>
               ) : (
                 <img 
                   src={previewUrl || ''}
