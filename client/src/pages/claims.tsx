@@ -4,11 +4,11 @@ import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { WardClaimModal } from "@/components/claims/ward-claim-modal";
 import DetailPanel from "@/components/layout/detail-panel";
-import { useQuery } from "@tanstack/react-query";
 import { Claim } from "@shared/schema";
 import { formatDate } from "@/lib/format-date";
 import { useLocation } from "wouter";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useClaims } from "@/hooks/use-claims";
 
 interface ClaimsProps {
   onSelectClaim: (claimId: number) => void;
@@ -22,12 +22,11 @@ export default function Claims({ onSelectClaim, selectedClaimId }: ClaimsProps) 
   const [, setLocation] = useLocation();
   
   // Fetch claims data
-  const { data: claims, isLoading } = useQuery<Claim[]>({
-    queryKey: ['/api/claims'],
-  });
+  const { claims } = useClaims();
+  const isLoading = claims.isLoading;
   
   // Filter claims based on search and status
-  const filteredClaims = claims?.filter(claim => {
+  const filteredClaims = claims.data?.filter(claim => {
     const matchesSearch = 
       searchTerm === "" || 
       claim.claimNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||

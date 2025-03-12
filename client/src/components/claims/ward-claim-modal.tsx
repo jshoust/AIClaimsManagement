@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription } from "@/components/ui/card";
 import { WardClaimForm, WardClaimFormValues } from "./ward-claim-form";
 import { useClaims } from "@/hooks/use-claims";
 import { useToast } from "@/hooks/use-toast";
-import { ClaimStatus } from "@shared/schema";
 
 interface WardClaimModalProps {
   isOpen: boolean;
@@ -24,6 +23,11 @@ export function WardClaimModal({ isOpen, onClose }: WardClaimModalProps) {
       
       // Create claim data object
       const claimData = {
+        // System fields
+        claimNumber: `CLM-${Math.floor(Math.random() * 90000) + 10000}`, // Generate a random claim number
+        dateSubmitted: new Date().toISOString(), // Add submission date
+        
+        // Ward Trucking specific fields
         wardProNumber: formData.wardProNumber,
         todaysDate: formData.todaysDate,
         freightBillDate: formData.freightBillDate,
@@ -65,14 +69,14 @@ export function WardClaimModal({ isOpen, onClose }: WardClaimModalProps) {
         signature: formData.signature || null,
         
         // Set status to new
-        status: ClaimStatus.New,
+        status: "new",
         
         // Empty fields that will be filled later
         assignedTo: null,
       };
       
       // Submit claim to server
-      await claims.createClaim(claimData);
+      await claims.createClaim.mutate(claimData);
       
       toast({
         title: "Claim submitted successfully",
