@@ -1,6 +1,7 @@
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Claim } from "@shared/schema";
 import { formatDate } from "@/lib/format-date";
+import { useLocation, Link } from "wouter";
 
 interface RecentClaimsProps {
   claims: Claim[];
@@ -8,11 +9,13 @@ interface RecentClaimsProps {
 }
 
 export function RecentClaims({ claims, onSelectClaim }: RecentClaimsProps) {
+  const [, setLocation] = useLocation();
+  
   return (
     <div className="bg-white rounded-lg shadow-sm border border-neutral-200">
       <div className="flex justify-between items-center p-4 border-b border-neutral-200">
         <h3 className="font-medium text-neutral-800">Recent Claims</h3>
-        <a href="/claims" className="text-primary text-sm hover:underline">View all</a>
+        <Link href="/claims" className="text-primary text-sm hover:underline">View all</Link>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -44,7 +47,9 @@ export function RecentClaims({ claims, onSelectClaim }: RecentClaimsProps) {
                   <td className="px-4 py-3">
                     <button 
                       className="text-primary hover:text-primary-dark"
-                      onClick={() => onSelectClaim(claim.id)}
+                      onClick={() => {
+                        setLocation(`/claims/${claim.id}`);
+                      }}
                     >
                       <span className="material-icons">visibility</span>
                     </button>
