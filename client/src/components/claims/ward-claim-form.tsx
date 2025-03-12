@@ -135,28 +135,22 @@ export function WardClaimForm({
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         {/* Header with Ward logo */}
         <div className="bg-white p-4 rounded-t-lg border border-gray-200">
-          <div className="flex justify-between items-center">
-            <div className="flex-shrink-0">
-              <img 
-                src="/images/ward-claim-form.png" 
-                alt="Ward Trucking Logo" 
-                className="w-64 object-contain" 
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  const parentDiv = e.currentTarget.parentElement;
-                  if (parentDiv) {
-                    const textElement = document.createElement('div');
-                    textElement.className = "text-green-800 font-bold text-2xl";
-                    textElement.innerText = "WARD TRUCKING";
-                    parentDiv.appendChild(textElement);
-                  }
-                }}
-              />
+          <div className="flex flex-col md:flex-row justify-between items-start">
+            <div className="flex-1">
+              <h1 className="text-xl font-bold text-green-800 uppercase mb-1">WARD TRUCKING, LLC</h1>
+              <p className="text-sm">P.O. Box 1553</p>
+              <p className="text-sm">Altoona, PA 16603</p>
+              <p className="text-sm">Ph: 800-458-3625</p>
+              <p className="text-sm">Fax: 814-946-4628</p>
             </div>
-            <div className="font-bold text-sm text-gray-700">
-              <div>P.O Box 1553</div>
-              <div>Altoona, PA 16603-1553</div>
-              <div>814-944-0803 FAX 814-944-2369</div>
+            
+            <div className="mt-4 md:mt-0 md:text-right">
+              <h2 className="text-lg font-semibold uppercase mb-3">STANDARD FORM FOR PRESENTATION OF LOSS AND DAMAGE CLAIM</h2>
+              <h2 className="text-base font-medium uppercase mb-1">TO: WARD TRUCKING CORP</h2>
+              <p className="text-sm">Claims Department</p>
+              <p className="text-sm">P.O. Box 1553</p>
+              <p className="text-sm">Altoona, PA 16603</p>
+              <p className="text-sm">814-946-8242</p>
             </div>
           </div>
         </div>
@@ -619,97 +613,139 @@ export function WardClaimForm({
         
 
         
-        {/* Claimant Information */}
+        {/* Verification Statement */}
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <h2 className="text-lg font-bold mb-4 text-green-800">CLAIMANT INFORMATION</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="companyName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Company Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter company name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <p className="text-center font-bold text-base uppercase mb-4">
+            THE FOREGOING STATEMENT OF FACTS IS HEREBY CERTIFIED AS CORRECT
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-1 flex justify-center items-center">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  // Would typically print the form in a real app
+                  window.alert("Print functionality would be implemented here.");
+                }}
+                className="bg-green-700 text-white hover:bg-green-800 hover:text-white w-full py-6"
+              >
+                Print
+              </Button>
+            </div>
             
-            <FormField
-              control={form.control}
-              name="contactPerson"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contact Person</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter contact name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="companyAddress"
-              render={({ field }) => (
-                <FormItem className="col-span-1 md:col-span-2">
-                  <FormLabel>Company Address</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Enter company address" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="emailAddress"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email Address</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="Enter email address" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter phone number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="md:col-span-2 space-y-4">
+              <FormField
+                control={form.control}
+                name="companyName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium">Your Company Name:</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter company name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="companyAddress"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium">Address:</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Enter company address" 
+                        className="resize-none min-h-[60px]" 
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="contactPerson"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium">Contact Person:</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter contact name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="emailAddress"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium">Email Address:</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="Enter email address" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Phone:</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter phone number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="fax"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Fax#</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter fax number (if available)" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-4 text-right text-xs text-gray-500">
+            3-Dec
           </div>
         </div>
         
-        {/* Signature */}
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <h2 className="text-lg font-bold mb-4 text-green-800">VERIFICATION</h2>
-          <p className="mb-4 text-sm text-gray-600">I certify that the above statements are true and correct.</p>
-          
+        {/* Signature - Hidden for electronic submission */}
+        <div className="hidden">
           <FormField
             control={form.control}
             name="signature"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Signature (Type your full name)</FormLabel>
                 <FormControl>
-                  <Input placeholder="Type your full name as signature" {...field} />
+                  <Input 
+                    type="hidden" 
+                    {...field} 
+                    value={field.value || form.watch('contactPerson')} 
+                  />
                 </FormControl>
-                <FormMessage />
               </FormItem>
             )}
           />
