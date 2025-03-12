@@ -359,6 +359,14 @@ export default function Documents() {
                         <span className="material-icons text-sm">share</span>
                         Share
                       </Button>
+                      <Button 
+                        variant="destructive" 
+                        className="w-full flex items-center gap-1"
+                        onClick={() => setDeleteDialogOpen(true)}
+                      >
+                        <span className="material-icons text-sm">delete</span>
+                        Delete Document
+                      </Button>
                     </div>
                   </div>
                 ) : (
@@ -464,6 +472,18 @@ export default function Documents() {
                               >
                                 <span className="material-icons text-primary">download</span>
                               </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedDocument(doc);
+                                  setDeleteDialogOpen(true);
+                                }}
+                              >
+                                <span className="material-icons text-red-500">delete</span>
+                              </Button>
                             </div>
                           </td>
                         </tr>
@@ -475,6 +495,41 @@ export default function Documents() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Delete Document Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Document</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this document? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (selectedDocument) {
+                  deleteDocument.mutate(selectedDocument.id, {
+                    onSuccess: () => {
+                      setSelectedDocument(null);
+                      setDeleteDialogOpen(false);
+                    }
+                  });
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteDocument.isPending ? (
+                <>
+                  <span className="animate-spin mr-2 h-4 w-4 border-2 border-t-transparent border-white rounded-full"></span>
+                  Deleting...
+                </>
+              ) : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Upload Document Dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
