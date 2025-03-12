@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Users } from "lucide-react";
 import { 
   Select,
   SelectContent,
@@ -17,6 +17,16 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Claim } from "@shared/schema";
+import { useState, useEffect } from "react";
+
+// Define user interface (matching users.tsx)
+interface User {
+  id: string;
+  fullName: string;
+  email: string;
+  role: string;
+  createdAt: string;
+}
 
 // Define form schema
 const wardClaimFormSchema = z.object({
@@ -79,6 +89,21 @@ export function WardClaimForm({
   missingFields = [],
   isLoading = false 
 }: WardClaimFormProps) {
+  // Load users from localStorage
+  const [users, setUsers] = useState<User[]>([]);
+  
+  // Load users on component mount
+  useEffect(() => {
+    const savedUsers = localStorage.getItem('users');
+    if (savedUsers) {
+      try {
+        setUsers(JSON.parse(savedUsers));
+      } catch (error) {
+        console.error("Error loading saved users:", error);
+      }
+    }
+  }, []);
+  
   const form = useForm<WardClaimFormValues>({
     resolver: zodResolver(wardClaimFormSchema),
     defaultValues: {
@@ -616,15 +641,46 @@ export function WardClaimForm({
                 <Label htmlFor="contactPerson" className={cn(
                   isMissing("contactPerson") && "text-red-500 font-medium"
                 )}>
-                  Contact Person {isMissing("contactPerson") && "*"}
+                  <div className="flex items-center">
+                    <Users className="h-4 w-4 mr-1" />
+                    Contact Person {isMissing("contactPerson") && "*"}
+                  </div>
                 </Label>
-                <Input
-                  id="contactPerson"
-                  {...form.register("contactPerson")}
-                  className={cn(
-                    isMissing("contactPerson") && "border-red-500 focus-visible:ring-red-500"
-                  )}
-                />
+                {users.length > 0 ? (
+                  <Select 
+                    onValueChange={(value) => {
+                      form.setValue("contactPerson", value);
+                      // Find selected user to autofill email if available
+                      const selectedUser = users.find(user => user.fullName === value);
+                      if (selectedUser && selectedUser.email) {
+                        form.setValue("email", selectedUser.email);
+                      }
+                    }}
+                    defaultValue={form.getValues("contactPerson")}
+                  >
+                    <SelectTrigger className={cn(
+                      isMissing("contactPerson") && "border-red-500 focus-visible:ring-red-500"
+                    )}>
+                      <SelectValue placeholder="Select contact person" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">-- Select a contact --</SelectItem>
+                      {users.map((user) => (
+                        <SelectItem key={user.id} value={user.fullName}>
+                          {user.fullName} ({user.role})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    id="contactPerson"
+                    {...form.register("contactPerson")}
+                    className={cn(
+                      isMissing("contactPerson") && "border-red-500 focus-visible:ring-red-500"
+                    )}
+                  />
+                )}
                 {form.formState.errors.contactPerson && (
                   <p className="text-red-500 text-sm">{form.formState.errors.contactPerson.message}</p>
                 )}
