@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,10 +7,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Document } from "@shared/schema";
 import { formatDate } from "@/lib/format-date";
+import { uploadFile } from "@/lib/file-upload";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Documents() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedClaimId, setSelectedClaimId] = useState<number | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Fetch documents data
   const { data: documents, isLoading } = useQuery<Document[]>({
@@ -18,17 +28,43 @@ export default function Documents() {
   });
   
   // Fetch claims data to associate with documents
-  const { data: claims } = useQuery({
+  const { data: claims = [] } = useQuery<any[]>({
     queryKey: ['/api/claims'],
+  });
+  
+  // File upload mutation
+  const uploadMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedFile) {
+        throw new Error("No file selected");
+      }
+      return uploadFile(selectedFile, selectedClaimId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
+      setUploadDialogOpen(false);
+      setSelectedFile(null);
+      setSelectedClaimId(null);
+      
+      toast({
+        title: "File Uploaded",
+        description: "The document was uploaded successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Upload Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
   
   // Map claim ID to claim details
   const claimsMap = new Map();
-  if (claims) {
-    claims.forEach((claim: any) => {
-      claimsMap.set(claim.id, claim);
-    });
-  }
+  claims.forEach((claim: any) => {
+    claimsMap.set(claim.id, claim);
+  });
   
   // Filter documents based on search term
   const filteredDocuments = documents?.filter(doc => 
@@ -56,10 +92,20 @@ export default function Documents() {
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-medium text-neutral-800">Documents</h2>
           <div className="flex gap-3">
-            <Button>
+            <Button onClick={() => setUploadDialogOpen(true)}>
               <span className="material-icons mr-1 text-sm">upload_file</span>
               Upload Documents
             </Button>
+            <input 
+              type="file" 
+              ref={fileInputRef}
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  setSelectedFile(e.target.files[0]);
+                }
+              }}
+            />
           </div>
         </div>
         
@@ -253,11 +299,29 @@ export default function Documents() {
                     </div>
                     
                     <div className="pt-2 space-y-2">
-                      <Button className="w-full flex items-center gap-1">
+                      <Button 
+                        className="w-full flex items-center gap-1"
+                        onClick={() => {
+                          if (selectedDocument) {
+                            window.open(`/uploads/${selectedDocument.filePath.split('/').pop()}`, '_blank');
+                          }
+                        }}
+                      >
                         <span className="material-icons text-sm">visibility</span>
                         View Document
                       </Button>
-                      <Button variant="outline" className="w-full flex items-center gap-1">
+                      <Button 
+                        variant="outline" 
+                        className="w-full flex items-center gap-1"
+                        onClick={() => {
+                          if (selectedDocument) {
+                            const link = document.createElement('a');
+                            link.href = `/uploads/${selectedDocument.filePath.split('/').pop()}`;
+                            link.download = selectedDocument.fileName;
+                            link.click();
+                          }
+                        }}
+                      >
                         <span className="material-icons text-sm">download</span>
                         Download
                       </Button>
@@ -354,6 +418,81 @@ export default function Documents() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Upload Document Dialog */}
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload Document</DialogTitle>
+            <DialogDescription>
+              Upload a document to the system. You can optionally associate it with a claim.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <p className="text-sm font-medium">File</p>
+              {selectedFile ? (
+                <div className="flex items-center justify-between p-2 border rounded-md">
+                  <div className="flex items-center">
+                    <span className="material-icons mr-2 text-neutral-500">
+                      {getFileIcon(selectedFile.type)}
+                    </span>
+                    <span className="text-sm truncate max-w-[200px]">{selectedFile.name}</span>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 w-8 p-0 rounded-full" 
+                    onClick={() => setSelectedFile(null)}
+                  >
+                    <span className="material-icons text-neutral-500">close</span>
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full h-24 border-dashed flex flex-col gap-1"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <span className="material-icons text-2xl">upload_file</span>
+                  <span>Click to select file</span>
+                </Button>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Associated Claim (Optional)</p>
+              <Select value={selectedClaimId?.toString() || ""} onValueChange={(value) => setSelectedClaimId(value ? parseInt(value) : null)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a claim" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  {claims.map((claim) => (
+                    <SelectItem key={claim.id} value={claim.id.toString()}>
+                      {claim.claimNumber} - {claim.customerName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter className="flex space-x-2 justify-end">
+            <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>Cancel</Button>
+            <Button 
+              disabled={!selectedFile || uploadMutation.isPending} 
+              onClick={() => uploadMutation.mutate()}
+            >
+              {uploadMutation.isPending ? (
+                <>
+                  <span className="animate-spin mr-2 h-4 w-4 border-2 border-t-transparent border-white rounded-full"></span>
+                  Uploading...
+                </>
+              ) : "Upload Document"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
