@@ -53,6 +53,9 @@ export default function Settings() {
     // Save profile settings to localStorage
     localStorage.setItem('profileSettings', JSON.stringify(profileSettings));
     
+    // Dispatch custom event to notify other components of the update
+    window.dispatchEvent(new Event('profileUpdated'));
+    
     toast({
       title: "Settings Saved",
       description: "Your settings have been updated successfully",

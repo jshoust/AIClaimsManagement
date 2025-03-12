@@ -16,8 +16,8 @@ export default function AppHeader() {
     initials: "JD"
   });
   
-  // Load profile settings on component mount
-  useEffect(() => {
+  // Function to load profile settings from localStorage
+  const loadProfileSettings = () => {
     const savedSettings = localStorage.getItem('profileSettings');
     if (savedSettings) {
       try {
@@ -37,6 +37,28 @@ export default function AppHeader() {
         console.error("Error loading profile settings:", error);
       }
     }
+  };
+  
+  // Load profile settings on component mount
+  useEffect(() => {
+    loadProfileSettings();
+    
+    // Listen for storage changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'profileSettings') {
+        loadProfileSettings();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also create a custom event listener for direct updates within the same window
+    window.addEventListener('profileUpdated', loadProfileSettings);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('profileUpdated', loadProfileSettings);
+    };
   }, []);
   
   return (
