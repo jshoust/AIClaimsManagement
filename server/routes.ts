@@ -318,9 +318,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   claimId,
                   assignedTo: null, // Unassigned by default
                   status: 'pending',
-                  priority: 'high',
                   dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Due in 3 days
                   metadata: {
+                    priority: 'high',
                     source: 'automatic',
                     documentId: document.id,
                     missingInformation: missingItem,
@@ -443,9 +443,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             claimId: document.claimId,
             assignedTo: null, // Unassigned by default
             status: 'pending',
-            priority: 'high',
             dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Due in 3 days
             metadata: {
+              priority: 'high',
               source: 'automatic',
               documentId: document.id,
               missingInformation: missingItem,

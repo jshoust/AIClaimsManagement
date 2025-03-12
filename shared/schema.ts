@@ -52,6 +52,7 @@ export const tasks = pgTable("tasks", {
   claimId: integer("claim_id").references(() => claims.id),
   status: text("status").notNull().default("pending"),
   assignedTo: text("assigned_to"),
+  metadata: jsonb("metadata"),
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({
