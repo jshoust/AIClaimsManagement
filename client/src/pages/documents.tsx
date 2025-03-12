@@ -462,12 +462,17 @@ export default function Documents() {
             
             <div className="space-y-2">
               <p className="text-sm font-medium">Associated Claim (Optional)</p>
-              <Select value={selectedClaimId?.toString() || ""} onValueChange={(value) => setSelectedClaimId(value ? parseInt(value) : null)}>
+              <Select 
+                value={selectedClaimId?.toString() || "none"} 
+                onValueChange={(value) => {
+                  // If "none" was selected, set to null, otherwise convert to number
+                  setSelectedClaimId(value === "none" ? null : parseInt(value));
+                }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a claim" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {claims.map((claim) => (
                     <SelectItem key={claim.id} value={claim.id.toString()}>
                       {claim.claimNumber} - {claim.customerName}
