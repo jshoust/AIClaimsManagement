@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Users } from "lucide-react";
+import { AlertCircle, Users, Truck, FileText, Upload } from "lucide-react";
 import { 
   Select,
   SelectContent,
@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Claim } from "@shared/schema";
 import { useState, useEffect } from "react";
 
@@ -28,7 +29,7 @@ interface User {
   createdAt: string;
 }
 
-// Define form schema
+// Define form schema that exactly matches the Ward Trucking claim form
 const wardClaimFormSchema = z.object({
   // Ward Trucking specific fields
   wardProNumber: z.string().min(1, "Ward Pro Number is required"),
@@ -36,7 +37,7 @@ const wardClaimFormSchema = z.object({
   freightBillDate: z.string().min(1, "Freight bill date is required"),
   claimantsRefNumber: z.string().optional(),
   claimAmount: z.string().min(1, "Claim amount is required"),
-  claimType: z.string().min(1, "Claim type is required"),
+  claimType: z.string().min(1, "Please select shortage or damage"),
   
   // Shipper information
   shipperName: z.string().min(1, "Shipper name is required"),
@@ -49,15 +50,15 @@ const wardClaimFormSchema = z.object({
   consigneePhone: z.string().min(1, "Consignee phone is required"),
   
   // Claim details
-  claimDescription: z.string().min(1, "Description is required"),
+  claimDescription: z.string().min(1, "Detailed statement is required"),
   
   // Supporting documents
-  originalBillOfLading: z.boolean().optional(),
-  originalFreightBill: z.boolean().optional(),
-  originalInvoice: z.boolean().optional(),
+  originalBillOfLading: z.boolean().default(false),
+  originalFreightBill: z.boolean().default(false),
+  originalInvoice: z.boolean().default(false),
   
   // Additional information
-  isRepairable: z.string().min(1, "Please indicate if merchandise is repairable"),
+  isRepairable: z.enum(["Yes", "No"]),
   repairCost: z.string().optional(),
   
   // Claimant information
@@ -134,7 +135,7 @@ export function WardClaimForm({
       originalInvoice: initialData.originalInvoice || false,
       
       // Additional information
-      isRepairable: initialData.isRepairable || "No",
+      isRepairable: (initialData.isRepairable as "Yes" | "No") || "No",
       repairCost: initialData.repairCost || "",
       
       // Claimant information
@@ -196,113 +197,118 @@ export function WardClaimForm({
         </Card>
       )}
       
-      {/* Form header */}
-      <div className="flex mb-6 border-b">
-        <h2 className="px-4 py-2 font-medium text-lg text-primary border-b-2 border-primary">
-          Ward Trucking Loss and Damage Claim Form
-        </h2>
+      {/* Ward trucking header with logo */}
+      <div className="flex items-center justify-between border-b border-green-800 pb-4 mb-6">
+        <div className="flex items-center">
+          <div className="text-green-800 mr-4">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 40" width="100" height="40">
+              <text x="5" y="30" fontFamily="Arial" fontSize="24" fontWeight="bold" fill="#1b5e20">WARD</text>
+              <text x="5" y="38" fontFamily="Arial" fontSize="12" fill="#1b5e20">TRUCKING</text>
+            </svg>
+          </div>
+          <div className="text-sm">
+            <p>P O Box 1553</p>
+            <p>Altoona, PA 16603-1553</p>
+            <p>814-944-0803 FAX 814-944-2369</p>
+          </div>
+        </div>
+        <div>
+          <Truck size={48} className="text-green-800" />
+        </div>
       </div>
       
-      {/* Main Form */}
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
-        <div className="space-y-8">
-          {/* Ward Pro Information */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold">Claim Information</h2>
+      {/* Main Form - Exactly matching Ward Trucking form */}
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <div className="space-y-6">
+          {/* Claim header info in grid layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="font-bold text-sm">TO:</div>
+              <div className="font-bold">WARD TRUCKING CORP</div>
+            </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
               {/* Ward Pro Number */}
-              <div className="space-y-2">
+              <div className="flex items-center">
                 <Label htmlFor="wardProNumber" className={cn(
-                  isMissing("wardProNumber") && "text-red-500 font-medium"
+                  "font-bold w-36",
+                  isMissing("wardProNumber") && "text-red-500"
                 )}>
-                  Ward Pro Number {isMissing("wardProNumber") && "*"}
+                  WARD PRO#:
                 </Label>
                 <Input
                   id="wardProNumber"
                   {...form.register("wardProNumber")}
                   className={cn(
+                    "ml-2",
                     isMissing("wardProNumber") && "border-red-500 focus-visible:ring-red-500"
                   )}
                 />
-                {form.formState.errors.wardProNumber && (
-                  <p className="text-red-500 text-sm">{form.formState.errors.wardProNumber.message}</p>
-                )}
               </div>
               
               {/* Today's Date */}
-              <div className="space-y-2">
+              <div className="flex items-center">
                 <Label htmlFor="todaysDate" className={cn(
-                  isMissing("todaysDate") && "text-red-500 font-medium"
+                  "font-bold w-36",
+                  isMissing("todaysDate") && "text-red-500"
                 )}>
-                  Today's Date {isMissing("todaysDate") && "*"}
+                  TODAY'S DATE:
                 </Label>
                 <Input
                   id="todaysDate"
                   type="date"
                   {...form.register("todaysDate")}
                   className={cn(
+                    "ml-2",
                     isMissing("todaysDate") && "border-red-500 focus-visible:ring-red-500"
                   )}
                 />
-                {form.formState.errors.todaysDate && (
-                  <p className="text-red-500 text-sm">{form.formState.errors.todaysDate.message}</p>
-                )}
               </div>
               
               {/* Freight Bill Date */}
-              <div className="space-y-2">
+              <div className="flex items-center">
                 <Label htmlFor="freightBillDate" className={cn(
-                  isMissing("freightBillDate") && "text-red-500 font-medium"
+                  "font-bold w-36",
+                  isMissing("freightBillDate") && "text-red-500"
                 )}>
-                  Freight Bill Date {isMissing("freightBillDate") && "*"}
+                  FREIGHT BILL DATE:
                 </Label>
                 <Input
                   id="freightBillDate"
                   type="date"
                   {...form.register("freightBillDate")}
                   className={cn(
+                    "ml-2",
                     isMissing("freightBillDate") && "border-red-500 focus-visible:ring-red-500"
                   )}
                 />
-                {form.formState.errors.freightBillDate && (
-                  <p className="text-red-500 text-sm">{form.formState.errors.freightBillDate.message}</p>
-                )}
               </div>
               
               {/* Claimant's Reference Number */}
-              <div className="space-y-2">
+              <div className="flex items-center">
                 <Label htmlFor="claimantsRefNumber" className={cn(
-                  isMissing("claimantsRefNumber") && "text-red-500 font-medium"
+                  "font-bold w-36",
+                  isMissing("claimantsRefNumber") && "text-red-500"
                 )}>
-                  Claimant's Reference Number {isMissing("claimantsRefNumber") && "*"}
+                  CLAIMANT'S REF. #:
                 </Label>
                 <Input
                   id="claimantsRefNumber"
                   {...form.register("claimantsRefNumber")}
                   className={cn(
+                    "ml-2",
                     isMissing("claimantsRefNumber") && "border-red-500 focus-visible:ring-red-500"
                   )}
                 />
-                {form.formState.errors.claimantsRefNumber && (
-                  <p className="text-red-500 text-sm">{form.formState.errors.claimantsRefNumber.message}</p>
-                )}
               </div>
             </div>
           </div>
           
-          {/* Claim Amount Section */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold">Claim Amount</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Claim Amount */}
-              <div className="space-y-2">
-                <Label htmlFor="claimAmount" className={cn(
-                  isMissing("claimAmount") && "text-red-500 font-medium"
-                )}>
-                  Amount ($) {isMissing("claimAmount") && "*"}
-                </Label>
+          {/* Claim description and amount */}
+          <div className="border-t border-b py-2">
+            <div className="flex flex-wrap items-center">
+              <span className="font-semibold mr-1">This claim for $</span>
+              <div className="w-36">
                 <Input
                   id="claimAmount"
                   {...form.register("claimAmount")}
@@ -310,36 +316,35 @@ export function WardClaimForm({
                     isMissing("claimAmount") && "border-red-500 focus-visible:ring-red-500"
                   )}
                 />
-                {form.formState.errors.claimAmount && (
-                  <p className="text-red-500 text-sm">{form.formState.errors.claimAmount.message}</p>
-                )}
+              </div>
+              <span className="font-semibold mx-1">is made against Ward in connection with the following described shipment:</span>
+              
+              <div className="flex items-center mt-2 w-full sm:w-auto ml-0 sm:ml-4">
+                <div className="inline-flex items-center mr-6">
+                  <input
+                    type="radio"
+                    id="claimTypeShortage"
+                    className="mr-2"
+                    checked={form.watch("claimType") === "Shortage"}
+                    onChange={() => form.setValue("claimType", "Shortage")}
+                  />
+                  <label htmlFor="claimTypeShortage" className="font-semibold">shortage</label>
+                </div>
+                <div className="inline-flex items-center">
+                  <input
+                    type="radio"
+                    id="claimTypeDamage"
+                    className="mr-2"
+                    checked={form.watch("claimType") === "Damage"}
+                    onChange={() => form.setValue("claimType", "Damage")}
+                  />
+                  <label htmlFor="claimTypeDamage" className="font-semibold">damage</label>
+                </div>
               </div>
               
-              {/* Claim Type */}
-              <div className="space-y-2">
-                <Label htmlFor="claimType" className={cn(
-                  isMissing("claimType") && "text-red-500 font-medium"
-                )}>
-                  Claim Type {isMissing("claimType") && "*"}
-                </Label>
-                <Select 
-                  onValueChange={(value) => form.setValue("claimType", value)} 
-                  defaultValue={form.getValues("claimType")}
-                >
-                  <SelectTrigger className={cn(
-                    isMissing("claimType") && "border-red-500 focus-visible:ring-red-500"
-                  )}>
-                    <SelectValue placeholder="Select claim type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Shortage">Shortage</SelectItem>
-                    <SelectItem value="Damage">Damage</SelectItem>
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.claimType && (
-                  <p className="text-red-500 text-sm">{form.formState.errors.claimType.message}</p>
-                )}
-              </div>
+              {form.formState.errors.claimType && (
+                <p className="text-red-500 text-sm w-full">{form.formState.errors.claimType.message}</p>
+              )}
             </div>
           </div>
           
