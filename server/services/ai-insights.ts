@@ -57,7 +57,6 @@ export async function generateClaimInsights(
       claimNumber: claim.claimNumber,
       status: claim.status,
       dateSubmitted: claim.dateSubmitted,
-      completionDate: claim.completionDate,
       amount: claim.claimAmount,
       missingInfo: claim.status === 'missing_info'
     }));
@@ -68,8 +67,7 @@ export async function generateClaimInsights(
       title: task.title,
       description: task.description,
       status: task.status,
-      dueDate: task.dueDate,
-      completionDate: task.completionDate
+      dueDate: task.dueDate
     }));
     
     const activitiesData = activities.map(activity => ({
@@ -125,7 +123,14 @@ export async function generateClaimInsights(
     });
     
     // Parse the response
-    const result = JSON.parse(response.choices[0].message.content);
+    const content = response.choices[0].message.content || '{}';
+    let result;
+    try {
+      result = JSON.parse(content);
+    } catch (parseError) {
+      console.error("Error parsing OpenAI response:", parseError);
+      result = {};
+    }
     
     // Ensure the response has the expected structure
     const aiResult: AIAnalysisResult = {
@@ -178,7 +183,6 @@ export async function predictClaimOutcome(
     const historicalData = historicalClaims.map(claim => ({
       status: claim.status,
       dateSubmitted: claim.dateSubmitted,
-      completionDate: claim.completionDate,
       amount: claim.claimAmount,
       missingInfo: claim.status === 'missing_info'
     }));
@@ -215,7 +219,14 @@ export async function predictClaimOutcome(
     });
     
     // Parse the response
-    const result = JSON.parse(response.choices[0].message.content);
+    const content = response.choices[0].message.content || '{}';
+    let result;
+    try {
+      result = JSON.parse(content);
+    } catch (parseError) {
+      console.error("Error parsing OpenAI response:", parseError);
+      result = {};
+    }
     
     // Ensure the response has the expected structure
     const prediction: ClaimPredictionResult = {
