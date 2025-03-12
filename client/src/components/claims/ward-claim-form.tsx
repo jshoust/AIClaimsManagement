@@ -664,7 +664,7 @@ export function WardClaimForm({
                       <SelectValue placeholder="Select contact person" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">-- Select a contact --</SelectItem>
+                      <SelectItem value="none">-- Select a contact --</SelectItem>
                       {users.map((user) => (
                         <SelectItem key={user.id} value={user.fullName}>
                           {user.fullName} ({user.role})
