@@ -53,7 +53,7 @@ export default function Dashboard({ onSelectClaim, selectedClaimId }: DashboardP
     ? tasks
         .filter(task => task.status === 'pending')
         .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-        .slice(0, 4)
+        .slice(0, 6)
     : [];
   
   // Get recent activities sorted by timestamp
@@ -138,21 +138,20 @@ export default function Dashboard({ onSelectClaim, selectedClaimId }: DashboardP
             />
           </div>
 
-          {/* Recent Claims & Tasks */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2">
-              <RecentClaims 
-                claims={recentClaims}
-                onSelectClaim={onSelectClaim}
-              />
-            </div>
-            
-            <div>
-              <PendingTasks 
-                tasks={pendingTasks}
-                onCreateTask={() => setIsCreateTaskModalOpen(true)}
-              />
-            </div>
+          {/* Recent Claims */}
+          <div className="mb-6">
+            <RecentClaims 
+              claims={recentClaims}
+              onSelectClaim={onSelectClaim}
+            />
+          </div>
+          
+          {/* Pending Tasks */}
+          <div className="mb-6">
+            <PendingTasks 
+              tasks={pendingTasks}
+              onCreateTask={() => setIsCreateTaskModalOpen(true)}
+            />
           </div>
           
           {/* AI Insights */}

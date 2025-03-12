@@ -59,45 +59,53 @@ export function PendingTasks({ tasks, onCreateTask }: PendingTasksProps) {
     <div className="bg-white rounded-lg shadow-sm border border-neutral-200">
       <div className="flex justify-between items-center p-4 border-b border-neutral-200">
         <h3 className="font-medium text-neutral-800">Pending Tasks</h3>
-        <Link href="/tasks" className="text-[hsl(155,45%,35%)] text-sm hover:underline">View all</Link>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={onCreateTask}
+            className="px-3 py-1 text-sm font-medium text-white bg-[hsl(155,45%,35%)] hover:bg-[hsl(155,45%,30%)] rounded-md flex items-center justify-center gap-1"
+          >
+            <span className="material-icons text-sm">add</span>
+            Create Task
+          </button>
+          <Link href="/tasks" className="text-[hsl(155,45%,35%)] text-sm hover:underline">View all</Link>
+        </div>
       </div>
-      <div className="p-4 space-y-3">
+      <div className="p-4">
         {tasks.length === 0 ? (
           <div className="text-center py-4 text-neutral-500">
             No pending tasks
           </div>
         ) : (
-          tasks.map((task) => {
-            const dueInfo = getTaskDueText(new Date(task.dueDate));
-            const typeInfo = getTaskTypeInfo(task.title);
-            const claim = claimsMap.get(task.claimId);
-            
-            return (
-              <div key={task.id} className="flex items-start gap-3 p-3 rounded-md hover:bg-neutral-50 border border-neutral-200">
-                <div className={`h-8 w-8 rounded-full ${typeInfo.bgColor} flex items-center justify-center flex-shrink-0`}>
-                  <span className="material-icons text-sm">{typeInfo.icon}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-medium text-neutral-800 truncate">{task.title}</h4>
-                  <div className="flex justify-between items-center mt-1">
-                    <p className="text-xs text-neutral-500">
-                      {claim ? `Claim #${claim.claimNumber} • ${claim.customerName}` : `Task #${task.id}`}
-                    </p>
-                    <span className={`text-xs font-medium ${dueInfo.className}`}>{dueInfo.text}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {tasks.map((task) => {
+              const dueInfo = getTaskDueText(new Date(task.dueDate));
+              const typeInfo = getTaskTypeInfo(task.title);
+              const claim = claimsMap.get(task.claimId);
+              
+              return (
+                <div key={task.id} className="flex items-start gap-3 p-3 rounded-md hover:bg-neutral-50 border border-neutral-200 h-full">
+                  <div className={`h-8 w-8 rounded-full ${typeInfo.bgColor} flex items-center justify-center flex-shrink-0`}>
+                    <span className="material-icons text-sm">{typeInfo.icon}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-medium text-neutral-800 truncate">{task.title}</h4>
+                    <div className="flex justify-between items-center mt-1">
+                      <p className="text-xs text-neutral-500">
+                        {claim ? `Claim #${claim.claimNumber}` : `Task #${task.id}`}
+                      </p>
+                      <span className={`text-xs font-medium ${dueInfo.className}`}>{dueInfo.text}</span>
+                    </div>
+                    {claim && (
+                      <p className="text-xs text-neutral-500 truncate mt-1">
+                        {claim.customerName || claim.claimantName || 'Unknown customer'}
+                      </p>
+                    )}
                   </div>
                 </div>
-              </div>
-            );
-          })
+              );
+            })}
+          </div>
         )}
-        
-        <button 
-          onClick={onCreateTask}
-          className="w-full mt-2 py-2 text-sm font-medium text-white bg-[hsl(155,45%,35%)] hover:bg-[hsl(155,45%,30%)] rounded-md flex items-center justify-center gap-1"
-        >
-          <span className="material-icons text-sm">add</span>
-          Create New Task
-        </button>
       </div>
     </div>
   );
