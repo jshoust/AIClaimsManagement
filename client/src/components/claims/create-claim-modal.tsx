@@ -106,7 +106,7 @@ export function CreateClaimModal({ isOpen, onClose }: CreateClaimModalProps) {
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit((data) => onSubmit(data, false))} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -288,7 +288,35 @@ export function CreateClaimModal({ isOpen, onClose }: CreateClaimModalProps) {
             
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-              <Button type="submit">Create Claim</Button>
+              <div className="flex gap-3">
+                <Button 
+                  type="button" 
+                  variant="secondary"
+                  onClick={() => {
+                    // Get all form values
+                    const formValues = form.getValues();
+                    
+                    // Manual validation for required fields before saving progress
+                    const requiredFields = ['customerName', 'contactPerson', 'email'];
+                    const hasRequiredFields = requiredFields.every(field => 
+                      formValues[field as keyof CreateClaimFormValues]
+                    );
+                    
+                    if (hasRequiredFields) {
+                      onSubmit(formValues, true);
+                    } else {
+                      toast({
+                        title: "Missing Information",
+                        description: "Please provide at least customer name, contact person, and email to save progress.",
+                        variant: "destructive"
+                      });
+                    }
+                  }}
+                >
+                  Save Progress
+                </Button>
+                <Button type="submit">Submit Claim</Button>
+              </div>
             </DialogFooter>
           </form>
         </Form>
