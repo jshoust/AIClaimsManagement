@@ -1,9 +1,12 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClaimSchema, insertTaskSchema, insertActivitySchema, insertDocumentSchema } from "@shared/schema";
+import { insertClaimSchema, insertTaskSchema, insertActivitySchema, insertDocumentSchema, ActivityType } from "@shared/schema";
 import { z, ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes with /api prefix
@@ -215,6 +218,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       res.status(500).json({ message: "Failed to create document" });
+    }
+  });
+  
+  // Configure multer for file uploads
+  const uploadsDir = path.join(process.cwd(), 'uploads');
+  
+  // Ensure uploads directory exists
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  
+  const storage_config = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, uploadsDir);
+    },
+    filename: function (req, file, cb) {
+      // Create a unique filename with original extension
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const ext = path.extname(file.originalname);
+      cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+    }
+  });
+  
+  const upload = multer({ 
+    storage: storage_config,
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB file size limit
+    }
+  });
+  
+  // File upload endpoint
+  app.post('/api/documents/upload', upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      
+      const file = req.file;
+      const claimId = req.body.claimId ? parseInt(req.body.claimId) : null;
+      const uploadedBy = req.body.uploadedBy || "System";
+      
+      // Create document record in storage
+      const document = await storage.createDocument({
+        fileName: file.originalname,
+        fileType: file.mimetype,
+        filePath: file.path,
+        claimId,
+        uploadedBy
+      });
+      
+      // If document is associated with a claim, create an activity record
+      if (claimId) {
+        await storage.createActivity({
+          claimId,
+          type: ActivityType.DOCUMENT,
+          description: `Document Uploaded: ${file.originalname}`,
+          createdBy: uploadedBy,
+          metadata: {
+            documentId: document.id,
+            fileName: file.originalname,
+            fileType: file.mimetype,
+            details: `Document uploaded by ${uploadedBy}`
+          }
+        });
+      }
+      
+      res.status(201).json(document);
+    } catch (error) {
+      console.error("File upload error:", error);
+      res.status(500).json({ message: "Failed to upload document" });
     }
   });
   
