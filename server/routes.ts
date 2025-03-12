@@ -75,8 +75,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!claim) {
         return res.status(404).json({ message: "Claim not found" });
       }
+
+      // Update the missingInformation field based on filled fields
+      const updateData = { ...req.body };
+      if (claim.missingInformation && Array.isArray(claim.missingInformation) && claim.missingInformation.length > 0) {
+        // Map of field names to missing information text
+        const fieldToMissingInfoMap: Record<string, string[]> = {
+          'wardProNumber': ['Ward Pro Number'],
+          'claimantsRefNumber': ['Claimant\'s Reference Number'],
+          'freightBillDate': ['Freight Bill Date'],
+          'claimAmount': ['Claim Amount'],
+          'shipperName': ['Shipper Name', 'Shipper Details'],
+          'shipperAddress': ['Shipper Address', 'Shipper Details'],
+          'shipperPhone': ['Shipper Phone', 'Shipper Details'],
+          'consigneeName': ['Consignee Name', 'Consignee Details'],
+          'consigneeAddress': ['Consignee Address', 'Consignee Details'],
+          'consigneePhone': ['Consignee Phone', 'Consignee Details'],
+          'claimDescription': ['Claim Description'],
+          'companyName': ['Company Name'],
+          'contactPerson': ['Contact Person'],
+          'email': ['Email Address'],
+          'phone': ['Phone Number'],
+        };
+
+        // Get a list of fields that are being updated with non-empty values
+        const updatedFields = Object.keys(req.body).filter(key => 
+          req.body[key] !== null && 
+          req.body[key] !== undefined && 
+          req.body[key] !== ''
+        );
+
+        // For each updated field, remove corresponding missing info items
+        let missingInfo = [...claim.missingInformation] as string[];
+        let removedItems: string[] = [];
+
+        updatedFields.forEach(field => {
+          if (fieldToMissingInfoMap[field]) {
+            fieldToMissingInfoMap[field].forEach(infoText => {
+              const index = missingInfo.findIndex(item => 
+                item.toLowerCase().includes(infoText.toLowerCase())
+              );
+              if (index !== -1) {
+                removedItems.push(missingInfo[index]);
+                missingInfo.splice(index, 1);
+              }
+            });
+          }
+        });
+
+        // If we removed any items, update the missingInformation field
+        if (removedItems.length > 0) {
+          updateData.missingInformation = missingInfo;
+
+          // Create activity for removed missing information
+          await storage.createActivity({
+            claimId: id,
+            type: "update",
+            description: `Missing Information Updated`,
+            createdBy: req.body.assignedTo || claim.assignedTo || "System",
+            metadata: {
+              details: `Information provided: ${removedItems.join(', ')}`,
+              removed: removedItems,
+              remaining: missingInfo
+            }
+          });
+        }
+      }
       
-      const updatedClaim = await storage.updateClaim(id, req.body);
+      const updatedClaim = await storage.updateClaim(id, updateData);
       
       // Create activity for status update if status changed
       if (req.body.status && req.body.status !== claim.status) {
@@ -95,6 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(updatedClaim);
     } catch (error) {
+      console.error("Error updating claim:", error);
       res.status(500).json({ message: "Failed to update claim" });
     }
   });
