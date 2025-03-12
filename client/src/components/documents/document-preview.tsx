@@ -16,10 +16,12 @@ export default function DocumentPreview({ document }: DocumentPreviewProps) {
   useEffect(() => {
     if (document && document.filePath) {
       // Extract the filename from the path
-      const filename = document.fileName; // Use fileName directly as it's more reliable
-      if (filename) {
-        // Use the filename directly to build the URL
-        setPreviewUrl(`/uploads/${filename}`);
+      const fullPath = document.filePath;
+      const filenameMatch = fullPath.match(/[^/\\]+$/); // Extract the last part of the path
+      
+      if (filenameMatch) {
+        // Use the extracted filename to build the URL
+        setPreviewUrl(`/uploads/${filenameMatch[0]}`);
         setIsLoading(false);
       } else {
         setError('Invalid file path');
