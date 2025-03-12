@@ -395,34 +395,14 @@ export default function ClaimDetails({ claimId, onClose }: ClaimDetailsProps) {
         </TabsContent>
       </Tabs>
       
+      {/* The Missing Information section has been moved to edit-claim-form.tsx and claim-form.tsx */}
       {claim.missingInformation && (claim.missingInformation as string[]).length > 0 && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-orange-800 text-sm flex items-center">
-              <span className="material-icons text-sm mr-1">warning</span>
-              Missing Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-orange-700 mb-2">
-              This claim is missing {(claim.missingInformation as string[]).length} required fields.
-            </p>
-            <ul className="space-y-1">
-              {(claim.missingInformation as string[]).map((item, index) => (
-                <li key={index} className="text-sm text-orange-700 flex items-start">
-                  <span className="material-icons text-orange-500 mr-2 text-sm">error</span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-4">
-              <Button onClick={sendFollowUpEmail} className="w-full">
-                <span className="material-icons mr-1 text-sm">email</span>
-                Send Follow-up Email
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="mt-6">
+          <Button onClick={sendFollowUpEmail} className="w-full">
+            <span className="material-icons mr-1 text-sm">email</span>
+            Send Follow-up Email for Missing Information
+          </Button>
+        </div>
       )}
     </div>
   );
