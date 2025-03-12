@@ -1,6 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { LogOut, User, Settings, HelpCircle } from "lucide-react";
+import { Link } from "wouter";
 
 // Profile settings interface matches what's used in settings.tsx
 interface ProfileSettings {
@@ -15,6 +25,21 @@ export default function AppHeader() {
     name: "John Doe",
     initials: "JD"
   });
+  
+  // Handle logout
+  const handleLogout = () => {
+    // Clear profile data
+    localStorage.removeItem('profileSettings');
+    
+    // Reset to default profile
+    setUser({
+      name: "John Doe",
+      initials: "JD"
+    });
+    
+    // Show logout confirmation
+    alert("You have been logged out successfully.");
+  };
   
   // Function to load profile settings from localStorage
   const loadProfileSettings = () => {
@@ -82,13 +107,42 @@ export default function AppHeader() {
           <Button variant="ghost" size="icon" className="rounded-full">
             <span className="material-icons text-neutral-500">notifications</span>
           </Button>
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center text-white font-medium text-sm">
-              {user.initials}
-            </div>
-            <span className="text-sm font-medium">{user.name}</span>
-            <span className="material-icons text-neutral-400">arrow_drop_down</span>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div className="flex items-center gap-2 cursor-pointer">
+                <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center text-white font-medium text-sm">
+                  {user.initials}
+                </div>
+                <span className="text-sm font-medium">{user.name}</span>
+                <span className="material-icons text-neutral-400">arrow_drop_down</span>
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <Link href="/settings">
+                <DropdownMenuItem className="cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/settings">
+                <DropdownMenuItem className="cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuItem className="cursor-pointer">
+                <HelpCircle className="mr-2 h-4 w-4" />
+                <span>Help & Support</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
