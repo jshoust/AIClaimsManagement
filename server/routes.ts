@@ -67,6 +67,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  app.delete('/api/claims/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const claim = await storage.getClaim(id);
+      
+      if (!claim) {
+        return res.status(404).json({ message: "Claim not found" });
+      }
+
+      const success = await storage.deleteClaim(id);
+      
+      if (success) {
+        res.status(200).json({ message: "Claim deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to delete claim" });
+      }
+    } catch (error) {
+      console.error('Error deleting claim:', error);
+      res.status(500).json({ message: "Failed to delete claim", error: String(error) });
+    }
+  });
+
   app.patch('/api/claims/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
@@ -288,6 +310,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       res.status(500).json({ message: "Failed to create document" });
+    }
+  });
+  
+  app.delete('/api/documents/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const document = await storage.getDocument(id);
+      
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+
+      const success = await storage.deleteDocument(id);
+      
+      if (success) {
+        // If document was linked to a claim, log an activity
+        if (document.claimId) {
+          await storage.createActivity({
+            claimId: document.claimId,
+            type: ActivityType.DOCUMENT,
+            description: `Document Deleted: ${document.fileName}`,
+            createdBy: "System",
+            metadata: {
+              documentId: document.id,
+              fileName: document.fileName,
+              details: `Document was deleted from the system`
+            }
+          });
+        }
+        
+        res.status(200).json({ message: "Document deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to delete document" });
+      }
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      res.status(500).json({ message: "Failed to delete document", error: String(error) });
     }
   });
   

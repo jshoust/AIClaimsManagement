@@ -82,11 +82,32 @@ export function useClaims() {
     }
   });
   
+  // Delete a claim
+  const deleteClaim = useMutation({
+    mutationFn: (id: number) => 
+      apiRequest('DELETE', `/api/claims/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/claims'] });
+      toast({
+        title: "Claim Deleted",
+        description: "The claim has been deleted successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete claim: " + (error as Error).message,
+        variant: "destructive",
+      });
+    }
+  });
+
   return {
     claims,
     getClaimById,
     createClaim,
     updateClaim,
+    deleteClaim,
     sendFollowUpEmail
   };
 }

@@ -9,6 +9,16 @@ import { formatDate } from "@/lib/format-date";
 import { useLocation } from "wouter";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useClaims } from "@/hooks/use-claims";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ClaimsProps {
   onSelectClaim: (claimId: number) => void;
@@ -20,10 +30,27 @@ export default function Claims({ onSelectClaim, selectedClaimId }: ClaimsProps) 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [, setLocation] = useLocation();
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+  const [claimToDelete, setClaimToDelete] = useState<number | null>(null);
   
   // Fetch claims data
-  const { claims } = useClaims();
+  const { claims, deleteClaim } = useClaims();
   const isLoading = claims.isLoading;
+  
+  // Handle delete confirmation
+  const handleDeleteClick = (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setClaimToDelete(id);
+    setIsDeleteAlertOpen(true);
+  };
+  
+  const confirmDelete = async () => {
+    if (claimToDelete) {
+      await deleteClaim.mutateAsync(claimToDelete);
+      setIsDeleteAlertOpen(false);
+      setClaimToDelete(null);
+    }
+  };
   
   // Filter claims based on search and status
   const filteredClaims = claims.data?.filter(claim => {
@@ -142,15 +169,25 @@ export default function Claims({ onSelectClaim, selectedClaimId }: ClaimsProps) 
                         </td>
                         <td className="px-4 py-3">{claim.assignedTo || 'Unassigned'}</td>
                         <td className="px-4 py-3">
-                          <button 
-                            className="text-primary hover:text-primary-dark"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setLocation(`/claims/${claim.id}`);
-                            }}
-                          >
-                            <span className="material-icons">visibility</span>
-                          </button>
+                          <div className="flex gap-2">
+                            <button 
+                              className="text-primary hover:text-primary-dark"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setLocation(`/claims/${claim.id}`);
+                              }}
+                              title="View Claim"
+                            >
+                              <span className="material-icons">visibility</span>
+                            </button>
+                            <button 
+                              className="text-red-500 hover:text-red-700"
+                              onClick={(e) => handleDeleteClick(claim.id, e)}
+                              title="Delete Claim"
+                            >
+                              <span className="material-icons">delete</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -166,6 +203,35 @@ export default function Claims({ onSelectClaim, selectedClaimId }: ClaimsProps) 
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
         />
+        
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to delete this claim?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the claim and all associated data
+                including documents, tasks, and activities.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmDelete}
+                className="bg-red-600 hover:bg-red-700 text-white focus:ring-red-600"
+              >
+                {deleteClaim.isPending ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Deleting...</span>
+                  </div>
+                ) : (
+                  "Delete Claim"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );
