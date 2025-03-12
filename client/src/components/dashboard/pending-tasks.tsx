@@ -59,7 +59,7 @@ export function PendingTasks({ tasks, onCreateTask }: PendingTasksProps) {
     <div className="bg-white rounded-lg shadow-sm border border-neutral-200">
       <div className="flex justify-between items-center p-4 border-b border-neutral-200">
         <h3 className="font-medium text-neutral-800">Pending Tasks</h3>
-        <Link href="/tasks" className="text-primary text-sm hover:underline">View all</Link>
+        <Link href="/tasks" className="text-[hsl(155,45%,35%)] text-sm hover:underline">View all</Link>
       </div>
       <div className="p-4 space-y-3">
         {tasks.length === 0 ? (

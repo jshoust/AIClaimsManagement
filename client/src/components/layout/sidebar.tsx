@@ -15,6 +15,7 @@ export default function Sidebar({ activePath }: SidebarProps) {
   const navItems: NavItem[] = [
     { path: "/", label: "Dashboard", icon: "dashboard" },
     { path: "/claims", label: "Claims", icon: "description" },
+    { path: "/tasks", label: "Tasks", icon: "task" },
     { path: "/email-integration", label: "Email Integration", icon: "email" },
     { path: "/database-search", label: "Database Search", icon: "storage" },
     { path: "/documents", label: "Documents", icon: "folder" },

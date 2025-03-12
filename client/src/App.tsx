@@ -38,6 +38,7 @@ function Router() {
             component={() => <Claims onSelectClaim={setSelectedClaimId} selectedClaimId={selectedClaimId} />} 
           />
           <Route path="/claims/:id" component={ClaimView} />
+          <Route path="/tasks" component={Tasks} />
           <Route path="/email-integration" component={EmailIntegration} />
           <Route path="/database-search" component={DatabaseSearch} />
           <Route path="/documents" component={Documents} />
