@@ -215,7 +215,7 @@ export function CreateClaimModal({ isOpen, onClose }: CreateClaimModalProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Select team member</SelectItem>
+                        <SelectItem value="unassigned">Select team member</SelectItem>
                         <SelectItem value="Sarah Johnson">Sarah Johnson</SelectItem>
                         <SelectItem value="Mike Thompson">Mike Thompson</SelectItem>
                         <SelectItem value="Jessica Williams">Jessica Williams</SelectItem>
