@@ -13,9 +13,9 @@ export default function AppHeader() {
       <div className="flex justify-between items-center px-4 py-2">
         <div className="flex items-center">
           <img 
-            src="https://www.wardtlc.com/wp-content/uploads/2021/09/cropped-logo_2-137x56.png" 
-            alt="Ward TLC Logo" 
-            className="h-10 mr-4"
+            src="/assets/boon-logo.png" 
+            alt="Boon Logo" 
+            className="h-8 mr-4"
           />
           <h1 className="text-xl font-medium text-primary">Claims Management System</h1>
         </div>
