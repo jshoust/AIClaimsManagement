@@ -68,44 +68,53 @@ export default function ClaimDetails({ claimId, onClose }: ClaimDetailsProps) {
   
   // Function to send follow-up email
   const sendFollowUpEmail = async () => {
-    if (!claim || Object.keys(claim).length === 0) return;
+    if (!claim || typeof claim !== 'object' || Object.keys(claim).length === 0) return;
     
     try {
+      // Get the claim ID safely
+      const claimId = claim.id as number;
+      
       // Format missing information as bullet points
-      const missingItems = ((claim.missingInformation as string[]) || [])
+      const missingInfo = claim.missingInformation as string[] || [];
+      const missingItems = missingInfo
         .map(item => `• ${item}`)
         .join('\n');
       
-      // Replace placeholders in email template
+      // Replace placeholders in email template with safe defaults
+      const contactPerson = claim.contactPerson as string || 'Customer';
+      const claimNumber = claim.claimNumber as string || 'Unknown';
+      const emailAddress = claim.email as string || '';
+      
       const emailBody = 
-        `Dear ${claim.contactPerson || 'Customer'},\n\n` +
-        `We are processing your claim #${claim.claimNumber || 'Unknown'} but need additional information to proceed. Please provide the following:\n\n` +
+        `Dear ${contactPerson},\n\n` +
+        `We are processing your claim #${claimNumber} but need additional information to proceed. Please provide the following:\n\n` +
         `${missingItems}\n\n` +
         `Thank you,\nWard TLC Claims Department`;
       
+      // Send the email
       await apiRequest('POST', '/api/send-email', {
-        to: claim.email || '',
-        subject: `Missing Information for Claim #${claim.claimNumber || 'Unknown'}`,
+        to: emailAddress,
+        subject: `Missing Information for Claim #${claimNumber}`,
         body: emailBody,
-        claimId: claim.id
+        claimId: claimId
       });
       
       toast({
         title: "Email Sent",
-        description: `Follow-up email sent to ${claim.contactPerson || 'Customer'}`,
+        description: `Follow-up email sent to ${contactPerson}`,
       });
       
       // Create activity log for email
       await apiRequest('POST', '/api/activities', {
-        claimId: claim.id,
+        claimId: claimId,
         type: 'email',
-        description: `Follow-up email sent to ${claim.contactPerson || 'Customer'}`,
+        description: `Follow-up email sent to ${contactPerson}`,
         createdBy: 'John Doe',
       });
       
       // Invalidate activities cache to show the new email activity
       queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/claims', claim.id, 'activities'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/claims', claimId, 'activities'] });
     } catch (error) {
       toast({
         title: "Error",
@@ -395,8 +404,9 @@ export default function ClaimDetails({ claimId, onClose }: ClaimDetailsProps) {
         </TabsContent>
       </Tabs>
       
-      {/* The Missing Information section has been moved to edit-claim-form.tsx and claim-form.tsx */}
-      {claim.missingInformation && (claim.missingInformation as string[]).length > 0 && (
+      {/* Email button for missing information */}
+      {claim && typeof claim === 'object' && claim.missingInformation &&
+       Array.isArray(claim.missingInformation) && claim.missingInformation.length > 0 && (
         <div className="mt-6">
           <Button onClick={sendFollowUpEmail} className="w-full">
             <span className="material-icons mr-1 text-sm">email</span>

@@ -102,25 +102,7 @@ export default function EditClaimForm({ claim, onClose }: EditClaimFormProps) {
         </div>
       </div>
       
-      {/* Missing information alert - this is kept outside the ClaimForm to 
-          show at the top level for admin users */}
-      {displayClaim?.missingInformation && Array.isArray(displayClaim.missingInformation) && displayClaim.missingInformation.length > 0 && (
-        <Card className="mb-6 border-amber-500 bg-amber-50">
-          <CardContent className="py-4">
-            <div className="flex items-start">
-              <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 mr-2" />
-              <div>
-                <h3 className="font-medium text-amber-800">Missing Information</h3>
-                <ul className="mt-1 pl-5 list-disc text-sm text-amber-700">
-                  {displayClaim.missingInformation.map((item: string, index: number) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Removed duplicate missing information section - it's already shown in ClaimForm */}
       
       {/* The new claim form component that exactly matches the PDF structure */}
       <ClaimForm
