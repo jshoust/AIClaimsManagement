@@ -19,7 +19,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const claims = await storage.getClaims();
       res.json(claims);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch claims" });
+      console.error('Error fetching claims:', error);
+      res.status(500).json({ message: "Failed to fetch claims", error: error.message });
     }
   });
   
@@ -104,7 +105,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tasks = await storage.getTasks();
       res.json(tasks);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch tasks" });
+      console.error('Error fetching tasks:', error);
+      res.status(500).json({ message: "Failed to fetch tasks", error: error.message });
     }
   });
   
