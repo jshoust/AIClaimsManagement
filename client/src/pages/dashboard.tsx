@@ -4,7 +4,7 @@ import { SummaryCard } from "@/components/dashboard/summary-card";
 import { RecentClaims } from "@/components/dashboard/recent-claims";
 import { PendingTasks } from "@/components/dashboard/pending-tasks";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
-import { CreateClaimModal } from "@/components/claims/create-claim-modal";
+import { WardClaimModal } from "@/components/claims/ward-claim-modal";
 import { CreateTaskModal } from "@/components/tasks/create-task-modal";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -159,8 +159,8 @@ export default function Dashboard({ onSelectClaim, selectedClaimId }: DashboardP
           <RecentActivity activities={recentActivities} />
         </div>
         
-        {/* Create Claim Modal */}
-        <CreateClaimModal 
+        {/* Create Claim Modal - Using Ward Trucking Form */}
+        <WardClaimModal 
           isOpen={isCreateClaimModalOpen}
           onClose={() => setIsCreateClaimModalOpen(false)}
         />
