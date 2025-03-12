@@ -476,12 +476,12 @@ export function WardClaimForm({
             </div>
           </div>
           
-          {/* Detailed Statement Section */}
+          {/* Claim Details Section */}
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold">Detailed Statement</h2>
+            <h2 className="text-xl font-semibold">Claim Details</h2>
             
             <div className="space-y-4">
-              {/* Claim Description */}
+              {/* Detailed statement of claim */}
               <div className="space-y-2">
                 <Label htmlFor="claimDescription" className={cn(
                   isMissing("claimDescription") && "text-red-500 font-medium"
@@ -490,8 +490,8 @@ export function WardClaimForm({
                 </Label>
                 <Textarea
                   id="claimDescription"
-                  rows={5}
                   {...form.register("claimDescription")}
+                  rows={4}
                   className={cn(
                     isMissing("claimDescription") && "border-red-500 focus-visible:ring-red-500"
                   )}
@@ -500,80 +500,105 @@ export function WardClaimForm({
                   <p className="text-red-500 text-sm">{form.formState.errors.claimDescription.message}</p>
                 )}
               </div>
+              
+              {/* Supporting Documents Section */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-dashed pt-4">
+                <h3 className="text-lg font-medium md:col-span-3">The following documents are submitted in support of this claim:</h3>
+                
+                {/* Original Bill of Lading */}
+                <div className="flex items-start space-x-2">
+                  <Checkbox 
+                    id="originalBillOfLading" 
+                    checked={form.watch("originalBillOfLading")}
+                    onCheckedChange={(checked) => {
+                      form.setValue("originalBillOfLading", checked as boolean);
+                    }}
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <label
+                      htmlFor="originalBillOfLading"
+                      className={cn(
+                        "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+                        isMissing("originalBillOfLading") && "text-red-500"
+                      )}
+                    >
+                      Original Bill of Lading
+                    </label>
+                  </div>
+                </div>
+                
+                {/* Original Freight Bill */}
+                <div className="flex items-start space-x-2">
+                  <Checkbox 
+                    id="originalFreightBill" 
+                    checked={form.watch("originalFreightBill")}
+                    onCheckedChange={(checked) => {
+                      form.setValue("originalFreightBill", checked as boolean);
+                    }}
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <label
+                      htmlFor="originalFreightBill"
+                      className={cn(
+                        "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+                        isMissing("originalFreightBill") && "text-red-500"
+                      )}
+                    >
+                      Original Freight Bill
+                    </label>
+                  </div>
+                </div>
+                
+                {/* Original Invoice */}
+                <div className="flex items-start space-x-2">
+                  <Checkbox 
+                    id="originalInvoice" 
+                    checked={form.watch("originalInvoice")}
+                    onCheckedChange={(checked) => {
+                      form.setValue("originalInvoice", checked as boolean);
+                    }}
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <label
+                      htmlFor="originalInvoice"
+                      className={cn(
+                        "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+                        isMissing("originalInvoice") && "text-red-500"
+                      )}
+                    >
+                      Original Invoice
+                    </label>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           
-          {/* Supporting Documents */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold">The Following Documents Are Submitted In Support Of This Claim</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="originalBillOfLading" 
-                  checked={form.watch("originalBillOfLading") as boolean}
-                  onCheckedChange={(checked) => 
-                    form.setValue("originalBillOfLading", checked as boolean)
-                  }
-                />
-                <Label htmlFor="originalBillOfLading" className="font-normal">
-                  Original Bill of Lading
-                </Label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="originalFreightBill" 
-                  checked={form.watch("originalFreightBill") as boolean}
-                  onCheckedChange={(checked) => 
-                    form.setValue("originalFreightBill", checked as boolean)
-                  }
-                />
-                <Label htmlFor="originalFreightBill" className="font-normal">
-                  Original Freight Bill
-                </Label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="originalInvoice" 
-                  checked={form.watch("originalInvoice") as boolean}
-                  onCheckedChange={(checked) => 
-                    form.setValue("originalInvoice", checked as boolean)
-                  }
-                />
-                <Label htmlFor="originalInvoice" className="font-normal">
-                  Original Invoice
-                </Label>
-              </div>
-            </div>
-          </div>
-          
-          {/* Is Merchandise Repairable */}
-          <div className="space-y-6">
+          {/* Additional Information Section */}
+          <div className="space-y-6 border-t pt-4">
             <h2 className="text-xl font-semibold">Additional Information</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="isRepairable" className={cn(
                   isMissing("isRepairable") && "text-red-500 font-medium"
                 )}>
                   Is Merchandise Repairable? {isMissing("isRepairable") && "*"}
                 </Label>
-                <Select 
-                  onValueChange={(value) => form.setValue("isRepairable", value)} 
-                  defaultValue={form.getValues("isRepairable")}
+                <RadioGroup
+                  value={form.watch("isRepairable")}
+                  onValueChange={(value) => form.setValue("isRepairable", value as "Yes" | "No")}
+                  className="flex space-x-4"
                 >
-                  <SelectTrigger className={cn(
-                    isMissing("isRepairable") && "border-red-500 focus-visible:ring-red-500"
-                  )}>
-                    <SelectValue placeholder="Select option" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Yes">Yes</SelectItem>
-                    <SelectItem value="No">No</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Yes" id="isRepairableYes" />
+                    <Label htmlFor="isRepairableYes">Yes</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="No" id="isRepairableNo" />
+                    <Label htmlFor="isRepairableNo">No</Label>
+                  </div>
+                </RadioGroup>
                 {form.formState.errors.isRepairable && (
                   <p className="text-red-500 text-sm">{form.formState.errors.isRepairable.message}</p>
                 )}
