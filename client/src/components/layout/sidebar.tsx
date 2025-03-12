@@ -20,6 +20,7 @@ export default function Sidebar({ activePath }: SidebarProps) {
     { path: "/database-search", label: "Database Search", icon: "storage" },
     { path: "/documents", label: "Documents", icon: "folder" },
     { path: "/reports", label: "Reports", icon: "bar_chart" },
+    { path: "/users", label: "Users", icon: "people" },
     { path: "/settings", label: "Settings", icon: "settings" },
   ];
   

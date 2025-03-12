@@ -12,6 +12,7 @@ import DatabaseSearch from "@/pages/database-search";
 import Documents from "@/pages/documents";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
+import Users from "@/pages/users";
 import AppHeader from "@/components/layout/app-header";
 import Sidebar from "@/components/layout/sidebar";
 import { useLocation } from "wouter";
@@ -44,6 +45,7 @@ function Router() {
           <Route path="/documents" component={Documents} />
           <Route path="/reports" component={Reports} />
           <Route path="/settings" component={Settings} />
+          <Route path="/users" component={Users} />
           <Route component={NotFound} />
         </Switch>
       </div>

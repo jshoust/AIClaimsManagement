@@ -1,12 +1,43 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+// Profile settings interface matches what's used in settings.tsx
+interface ProfileSettings {
+  fullName: string;
+  email: string;
+  username: string;
+  role: string;
+}
 
 export default function AppHeader() {
-  const [user] = useState({
+  const [user, setUser] = useState({
     name: "John Doe",
     initials: "JD"
   });
+  
+  // Load profile settings on component mount
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('profileSettings');
+    if (savedSettings) {
+      try {
+        const profileSettings: ProfileSettings = JSON.parse(savedSettings);
+        
+        // Extract initials from full name
+        const nameParts = profileSettings.fullName.split(' ');
+        const initials = nameParts.length > 1 
+          ? `${nameParts[0][0]}${nameParts[1][0]}`
+          : profileSettings.fullName.substring(0, 2);
+        
+        setUser({
+          name: profileSettings.fullName,
+          initials: initials.toUpperCase()
+        });
+      } catch (error) {
+        console.error("Error loading profile settings:", error);
+      }
+    }
+  }, []);
   
   return (
     <header className="bg-white border-b border-neutral-200 shadow-sm">
