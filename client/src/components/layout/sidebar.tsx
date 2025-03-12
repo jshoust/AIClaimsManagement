@@ -28,18 +28,17 @@ export default function Sidebar({ activePath }: SidebarProps) {
         <ul className="space-y-1">
           {navItems.map((item) => (
             <li key={item.path}>
-              <Link href={item.path}>
-                <a 
-                  className={cn(
-                    "flex items-center px-3 py-2 text-sm rounded-md",
-                    activePath === item.path
-                      ? "bg-primary-light bg-opacity-10 text-primary"
-                      : "hover:bg-neutral-100 text-neutral-500"
-                  )}
-                >
-                  <span className="material-icons mr-3 text-current">{item.icon}</span>
-                  {item.label}
-                </a>
+              <Link 
+                href={item.path}
+                className={cn(
+                  "flex items-center px-3 py-2 text-sm rounded-md",
+                  activePath === item.path
+                    ? "bg-primary-light bg-opacity-10 text-primary"
+                    : "hover:bg-neutral-100 text-neutral-500"
+                )}
+              >
+                <span className="material-icons mr-3 text-current">{item.icon}</span>
+                {item.label}
               </Link>
             </li>
           ))}
