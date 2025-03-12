@@ -20,39 +20,53 @@ export const insertUserSchema = createInsertSchema(users).pick({
   role: true,
 });
 
-// Claims table
+// Claims table - Ward Trucking form format
 export const claims = pgTable("claims", {
   id: serial("id").primaryKey(),
   claimNumber: text("claim_number").notNull().unique(),
-  customerName: text("customer_name").notNull(),
+  // Ward Trucking specific fields
+  wardProNumber: text("ward_pro_number"),
+  todaysDate: text("todays_date"),
+  freightBillDate: text("freight_bill_date"),
+  claimantsRefNumber: text("claimants_ref_number"),
+  claimAmount: text("claim_amount").notNull(),
+  claimType: text("claim_type").notNull(), // shortage or damage
+  
+  // Shipper information
+  shipperName: text("shipper_name"), 
+  shipperAddress: text("shipper_address"),
+  shipperPhone: text("shipper_phone"),
+  
+  // Consignee information
+  consigneeName: text("consignee_name"),
+  consigneeAddress: text("consignee_address"),
+  consigneePhone: text("consignee_phone"),
+  
+  // Claim details
+  claimDescription: text("claim_description"), // Detailed statement
+  
+  // Supporting documents
+  originalBillOfLading: boolean("original_bill_of_lading").default(false),
+  originalFreightBill: boolean("original_freight_bill").default(false),
+  originalInvoice: boolean("original_invoice").default(false),
+  
+  // Additional information
+  isRepairable: text("is_repairable"), // Yes/No
+  repairCost: text("repair_cost"),
+  
+  // Claimant information
+  companyName: text("company_name").notNull(),
+  address: text("address"),
   contactPerson: text("contact_person").notNull(),
   email: text("email").notNull(),
   phone: text("phone").notNull(),
-  orderNumber: text("order_number").notNull(),
-  claimAmount: text("claim_amount").notNull(),
-  claimType: text("claim_type").notNull(),
-  description: text("description").notNull(),
+  fax: text("fax"),
+  
+  // System fields
   status: text("status").notNull().default("new"),
   dateSubmitted: timestamp("date_submitted").notNull().defaultNow(),
   assignedTo: text("assigned_to"),
   missingInformation: jsonb("missing_information").notNull().default([]),
-  // Address information
-  addressLine1: text("address_line1"),
-  addressLine2: text("address_line2"),
-  city: text("city"),
-  state: text("state"),
-  zipCode: text("zip_code"),
-  country: text("country"),
-  // Product information
-  purchaseDate: text("purchase_date"),
-  productName: text("product_name"),
-  productSku: text("product_sku"),
-  productQuantity: text("product_quantity"),
-  // Additional claim details
-  damageDescription: text("damage_description"),
-  preferredResolution: text("preferred_resolution"),
-  dateOfIncident: text("date_of_incident"),
-  attachments: text("attachments"),
   signature: text("signature"),
 });
 

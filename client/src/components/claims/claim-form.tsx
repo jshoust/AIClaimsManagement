@@ -13,40 +13,48 @@ import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { Claim } from "@shared/schema";
 
-// Schema that matches the PDF form
+// Schema that matches the Ward Trucking claim form
 const claimFormSchema = z.object({
-  // Customer Information
-  customerName: z.string().min(1, "Customer name is required"),
+  // Ward Trucking specific fields
+  wardProNumber: z.string().optional(),
+  todaysDate: z.string().optional(),
+  freightBillDate: z.string().optional(),
+  claimantsRefNumber: z.string().optional(),
+  claimAmount: z.string().min(1, "Claim amount is required"),
+  claimType: z.string().min(1, "Claim type is required"), // shortage or damage
+  
+  // Shipper information
+  shipperName: z.string().min(1, "Shipper name is required"), 
+  shipperAddress: z.string().min(1, "Shipper address is required"),
+  shipperPhone: z.string().min(1, "Shipper phone is required"),
+  
+  // Consignee information
+  consigneeName: z.string().min(1, "Consignee name is required"),
+  consigneeAddress: z.string().min(1, "Consignee address is required"),
+  consigneePhone: z.string().min(1, "Consignee phone is required"),
+  
+  // Claim details
+  claimDescription: z.string().min(1, "Detailed claim statement is required"),
+  
+  // Supporting documents
+  originalBillOfLading: z.boolean().optional().default(false),
+  originalFreightBill: z.boolean().optional().default(false),
+  originalInvoice: z.boolean().optional().default(false),
+  
+  // Additional information
+  isRepairable: z.string().optional(),
+  repairCost: z.string().optional(),
+  
+  // Claimant information
+  companyName: z.string().min(1, "Company name is required"),
+  address: z.string().min(1, "Address is required"),
   contactPerson: z.string().min(1, "Contact person is required"),
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().min(1, "Phone number is required"),
-  
-  // Address Information
-  addressLine1: z.string().min(1, "Address line 1 is required"),
-  addressLine2: z.string().optional(),
-  city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State is required"),
-  zipCode: z.string().min(1, "Zip/Postal code is required"),
-  country: z.string().min(1, "Country is required"),
-  
-  // Order Information
-  orderNumber: z.string().min(1, "Order number is required"),
-  purchaseDate: z.string().min(1, "Purchase date is required"),
-  productName: z.string().min(1, "Product name is required"),
-  productSku: z.string().optional(),
-  productQuantity: z.string().optional(),
-  
-  // Claim Information
-  claimAmount: z.string().min(1, "Claim amount is required"),
-  claimType: z.string().min(1, "Claim type is required"),
-  description: z.string().min(1, "Claim description is required"),
-  damageDescription: z.string().min(1, "Damage description is required"),
-  dateOfIncident: z.string().min(1, "Date of incident is required"),
-  preferredResolution: z.string().min(1, "Preferred resolution is required"),
+  fax: z.string().optional(),
   
   // Additional fields
   signature: z.string().optional(),
-  attachments: z.string().optional(),
 });
 
 type ClaimFormValues = z.infer<typeof claimFormSchema>;
@@ -66,34 +74,50 @@ export function ClaimForm({
   missingFields = [],
   isLoading = false 
 }: ClaimFormProps) {
-  const [activeTab, setActiveTab] = useState<"customerInfo" | "claimDetails">("customerInfo");
+  const [activeTab, setActiveTab] = useState<"claimInfo" | "shipmentDetails">("claimInfo");
   
   const form = useForm<ClaimFormValues>({
     resolver: zodResolver(claimFormSchema),
     defaultValues: {
-      customerName: initialData.customerName || "",
+      // Ward Trucking specific fields
+      wardProNumber: initialData.wardProNumber || "",
+      todaysDate: initialData.todaysDate || new Date().toISOString().split('T')[0],
+      freightBillDate: initialData.freightBillDate || "",
+      claimantsRefNumber: initialData.claimantsRefNumber || "",
+      claimAmount: initialData.claimAmount || "",
+      claimType: initialData.claimType || "damage",
+      
+      // Shipper information
+      shipperName: initialData.shipperName || "", 
+      shipperAddress: initialData.shipperAddress || "",
+      shipperPhone: initialData.shipperPhone || "",
+      
+      // Consignee information
+      consigneeName: initialData.consigneeName || "",
+      consigneeAddress: initialData.consigneeAddress || "",
+      consigneePhone: initialData.consigneePhone || "",
+      
+      // Claim details
+      claimDescription: initialData.claimDescription || "",
+      
+      // Supporting documents - these would be checkboxes
+      originalBillOfLading: initialData.originalBillOfLading || false,
+      originalFreightBill: initialData.originalFreightBill || false,
+      originalInvoice: initialData.originalInvoice || false,
+      
+      // Additional information
+      isRepairable: initialData.isRepairable || "No",
+      repairCost: initialData.repairCost || "",
+      
+      // Claimant information
+      companyName: initialData.companyName || "Ward Trucking Corp",
+      address: initialData.address || "",
       contactPerson: initialData.contactPerson || "",
       email: initialData.email || "",
       phone: initialData.phone || "",
-      addressLine1: initialData.addressLine1 || "",
-      addressLine2: initialData.addressLine2 || "",
-      city: initialData.city || "",
-      state: initialData.state || "",
-      zipCode: initialData.zipCode || "",
-      country: initialData.country || "",
-      orderNumber: initialData.orderNumber || "",
-      purchaseDate: initialData.purchaseDate || "",
-      productName: initialData.productName || "",
-      productSku: initialData.productSku || "",
-      productQuantity: initialData.productQuantity || "",
-      claimAmount: initialData.claimAmount || "",
-      claimType: initialData.claimType || "",
-      description: initialData.description || "",
-      damageDescription: initialData.damageDescription || "",
-      dateOfIncident: initialData.dateOfIncident || "",
-      preferredResolution: initialData.preferredResolution || "",
+      fax: initialData.fax || "",
+      
       signature: initialData.signature || "",
-      attachments: initialData.attachments || "",
     },
   });
   
@@ -116,8 +140,8 @@ export function ClaimForm({
       {/* Header with logo and form title */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-primary">Boon AI Claims Processing</h1>
-          <p className="text-muted-foreground">Customer Claim Form</p>
+          <h1 className="text-2xl font-bold text-primary">Ward Trucking Corp</h1>
+          <p className="text-muted-foreground">Freight Claim Form</p>
         </div>
         <img src="/assets/logo.png" alt="Boon Logo" className="h-16 w-auto" />
       </div>
@@ -156,7 +180,7 @@ export function ClaimForm({
           )}
           onClick={() => setActiveTab("customerInfo")}
         >
-          Customer Information
+          Claim Information
         </button>
         <button
           type="button"
@@ -168,7 +192,7 @@ export function ClaimForm({
           )}
           onClick={() => setActiveTab("claimDetails")}
         >
-          Claim Details
+          Shipping Details
         </button>
       </div>
       

@@ -133,49 +133,65 @@ export async function analyzePDFDocument(filePath: string): Promise<DocumentAnal
       };
     }
     
-    // For the Boon AI Claims Processing system, we'll use a direct analysis approach 
-    // to simulate PDF text extraction since we already know the form format
-    
-    // This is a direct implementation specifically for the Claim_Form.pdf template
-    // Return pre-structured data based on the specific PDF template
-    console.log("PDF analysis requested for:", filePath);
+    // For the Ward Trucking claims form specifically
+    console.log("Ward Trucking PDF analysis requested for:", filePath);
     
     // Since we can't directly extract text from the PDF, we'll simulate analysis
-    // with a pre-structured response that matches the Claim_Form.pdf template
+    // with a pre-structured response that matches the Ward Trucking claim form template
     
-    // In a production environment, this would use proper PDF text extraction
     return {
       missingInformation: [
-        "Customer Name",
+        "Claimant's Reference Number",
+        "Ward Pro Number",
+        "Freight Bill Date",
+        "Claim Amount",
+        "Shipper Details",
+        "Consignee Details",
+        "Claim Description",
+        "Company Name",
         "Contact Person",
         "Email Address",
-        "Phone Number",
-        "Address details",
-        "Order Number",
-        "Purchase Date",
-        "Product Information",
-        "Claim Amount",
-        "Claim Description"
+        "Phone Number"
       ],
       extractedData: {
-        // These fields would normally be extracted from the PDF
-        // They're empty now, requiring manual input
-        customerName: "",
+        // Ward Trucking specific fields
+        wardProNumber: "",
+        todaysDate: new Date().toISOString().split('T')[0], // Current date
+        freightBillDate: "",
+        claimantsRefNumber: "",
+        claimAmount: "",
+        claimType: "damage", // Default value - "shortage" or "damage"
+        
+        // Shipper information
+        shipperName: "", 
+        shipperAddress: "",
+        shipperPhone: "",
+        
+        // Consignee information
+        consigneeName: "",
+        consigneeAddress: "",
+        consigneePhone: "",
+        
+        // Claim details
+        claimDescription: "", // Detailed statement
+        
+        // Supporting documents - these would be checkboxes
+        originalBillOfLading: false,
+        originalFreightBill: false,
+        originalInvoice: false,
+        
+        // Additional information
+        isRepairable: "No",
+        repairCost: "",
+        
+        // Claimant information
+        companyName: "Ward Trucking Corp", // Default
+        address: "",
         contactPerson: "",
         email: "",
-        phone: "",
-        addressLine1: "",
-        city: "",
-        state: "",
-        zipCode: "",
-        country: "",
-        orderNumber: "",
-        claimAmount: "",
-        claimType: "Product Defect", // Default based on form
-        description: "",
-        preferredResolution: "Refund" // Default based on form
+        phone: ""
       },
-      summary: "Claim form uploaded. Please complete the missing information to process this claim."
+      summary: "Ward Trucking claim form uploaded. Please complete the missing information to process this claim."
     };
   } catch (error: any) {
     console.error("Error in analyzePDFDocument:", error);
