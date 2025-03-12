@@ -41,12 +41,11 @@ export function AIInsights({ claims, tasks }: AIInsightsProps) {
   // AI insights mutation
   const { mutate: generateInsights, data: aiResult, isPending, isError, error } = useMutation<AIAnalysisResult>({
     mutationFn: async () => {
-      return apiRequest<AIAnalysisResult>({
-        url: '/api/ai/insights',
-        method: 'POST',
-        body: {}, // No specific data needed for the request
-        on401: "throw"
-      });
+      return apiRequest<AIAnalysisResult>(
+        'POST',
+        '/api/ai/insights',
+        {} // No specific data needed for the request
+      );
     },
     onError: (error: Error) => {
       toast({
