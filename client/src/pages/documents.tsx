@@ -323,8 +323,11 @@ export default function Documents() {
                       <Button 
                         className="w-full flex items-center gap-1"
                         onClick={() => {
-                          if (selectedDocument) {
-                            window.open(`/uploads/${selectedDocument.fileName}`, '_blank');
+                          if (selectedDocument && selectedDocument.filePath) {
+                            const filenameMatch = selectedDocument.filePath.match(/[^/\\]+$/);
+                            if (filenameMatch) {
+                              window.open(`/uploads/${filenameMatch[0]}`, '_blank');
+                            }
                           }
                         }}
                       >
@@ -426,7 +429,14 @@ export default function Documents() {
                                 variant="ghost" 
                                 size="sm" 
                                 className="h-8 w-8 p-0"
-                                onClick={() => window.open(`/uploads/${doc.fileName}`, '_blank')}
+                                onClick={() => {
+                                  if (doc.filePath) {
+                                    const filenameMatch = doc.filePath.match(/[^/\\]+$/);
+                                    if (filenameMatch) {
+                                      window.open(`/uploads/${filenameMatch[0]}`, '_blank');
+                                    }
+                                  }
+                                }}
                               >
                                 <span className="material-icons text-primary">visibility</span>
                               </Button>
