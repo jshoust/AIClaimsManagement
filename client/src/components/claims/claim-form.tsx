@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,9 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Claim } from "@shared/schema";
 
 // Schema that matches the Ward Trucking claim form
@@ -57,7 +56,7 @@ const claimFormSchema = z.object({
   signature: z.string().optional(),
 });
 
-type ClaimFormValues = z.infer<typeof claimFormSchema>;
+export type ClaimFormValues = z.infer<typeof claimFormSchema>;
 
 interface ClaimFormProps {
   initialData?: Partial<Claim>;
@@ -74,8 +73,6 @@ export function ClaimForm({
   missingFields = [],
   isLoading = false 
 }: ClaimFormProps) {
-  const [activeTab, setActiveTab] = useState<"claimInfo" | "shipmentDetails">("claimInfo");
-  
   const form = useForm<ClaimFormValues>({
     resolver: zodResolver(claimFormSchema),
     defaultValues: {
@@ -85,7 +82,7 @@ export function ClaimForm({
       freightBillDate: initialData.freightBillDate || "",
       claimantsRefNumber: initialData.claimantsRefNumber || "",
       claimAmount: initialData.claimAmount || "",
-      claimType: initialData.claimType || "damage",
+      claimType: initialData.claimType || "Damage",
       
       // Shipper information
       shipperName: initialData.shipperName || "", 
@@ -168,544 +165,557 @@ export function ClaimForm({
         </Card>
       )}
       
-      {/* Tab navigation */}
+      {/* Form header */}
       <div className="flex mb-6 border-b">
-        <button
-          type="button"
-          className={cn(
-            "px-4 py-2 font-medium text-sm",
-            activeTab === "claimInfo" 
-              ? "border-b-2 border-primary text-primary" 
-              : "text-muted-foreground hover:text-foreground"
-          )}
-          onClick={() => setActiveTab("claimInfo")}
-        >
-          Claim Information
-        </button>
-        <button
-          type="button"
-          className={cn(
-            "px-4 py-2 font-medium text-sm", 
-            activeTab === "shipmentDetails" 
-              ? "border-b-2 border-primary text-primary" 
-              : "text-muted-foreground hover:text-foreground"
-          )}
-          onClick={() => setActiveTab("shipmentDetails")}
-        >
-          Shipping Details
-        </button>
+        <h2 className="px-4 py-2 font-medium text-lg text-primary border-b-2 border-primary">
+          Ward Trucking Loss and Damage Claim Form
+        </h2>
       </div>
       
+      {/* Main Form */}
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
-        {activeTab === "claimInfo" && (
-          <div className="space-y-8">
-            {/* Customer Information Section */}
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold">Shipper Information</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Shipper Name */}
-                <div className="space-y-2">
-                  <Label htmlFor="shipperName" className={cn(
-                    isMissing("shipperName") && "text-red-500 font-medium"
-                  )}>
-                    Shipper Name {isMissing("shipperName") && "*"}
-                  </Label>
-                  <Input
-                    id="shipperName"
-                    {...form.register("shipperName")}
-                    className={cn(
-                      isMissing("shipperName") && "border-red-500 focus-visible:ring-red-500"
-                    )}
-                  />
-                  {form.formState.errors.shipperName && (
-                    <p className="text-red-500 text-sm">{form.formState.errors.shipperName.message}</p>
-                  )}
-                </div>
-                
-                {/* Contact Person */}
-                <div className="space-y-2">
-                  <Label htmlFor="contactPerson" className={cn(
-                    isMissing("contactPerson") && "text-red-500 font-medium"
-                  )}>
-                    Contact Person {isMissing("contactPerson") && "*"}
-                  </Label>
-                  <Input
-                    id="contactPerson"
-                    {...form.register("contactPerson")}
-                    className={cn(
-                      isMissing("contactPerson") && "border-red-500 focus-visible:ring-red-500"
-                    )}
-                  />
-                  {form.formState.errors.contactPerson && (
-                    <p className="text-red-500 text-sm">{form.formState.errors.contactPerson.message}</p>
-                  )}
-                </div>
-                
-                {/* Email */}
-                <div className="space-y-2">
-                  <Label htmlFor="email" className={cn(
-                    isMissing("email") && "text-red-500 font-medium"
-                  )}>
-                    Email Address {isMissing("email") && "*"}
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    {...form.register("email")}
-                    className={cn(
-                      isMissing("email") && "border-red-500 focus-visible:ring-red-500"
-                    )}
-                  />
-                  {form.formState.errors.email && (
-                    <p className="text-red-500 text-sm">{form.formState.errors.email.message}</p>
-                  )}
-                </div>
-                
-                {/* Phone */}
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className={cn(
-                    isMissing("phone") && "text-red-500 font-medium"
-                  )}>
-                    Phone Number {isMissing("phone") && "*"}
-                  </Label>
-                  <Input
-                    id="phone"
-                    {...form.register("phone")}
-                    className={cn(
-                      isMissing("phone") && "border-red-500 focus-visible:ring-red-500"
-                    )}
-                  />
-                  {form.formState.errors.phone && (
-                    <p className="text-red-500 text-sm">{form.formState.errors.phone.message}</p>
-                  )}
-                </div>
-              </div>
-            </div>
+        <div className="space-y-8">
+          {/* Ward Pro Information */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Claim Information</h2>
             
-            {/* Address Section */}
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold">Address</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Address Line 1 */}
-                <div className="space-y-2">
-                  <Label htmlFor="addressLine1" className={cn(
-                    isMissing("addressLine1") && "text-red-500 font-medium"
-                  )}>
-                    Address Line 1 {isMissing("addressLine1") && "*"}
-                  </Label>
-                  <Input
-                    id="addressLine1"
-                    {...form.register("addressLine1")}
-                    className={cn(
-                      isMissing("addressLine1") && "border-red-500 focus-visible:ring-red-500"
-                    )}
-                  />
-                  {form.formState.errors.addressLine1 && (
-                    <p className="text-red-500 text-sm">{form.formState.errors.addressLine1.message}</p>
-                  )}
-                </div>
-                
-                {/* Address Line 2 */}
-                <div className="space-y-2">
-                  <Label htmlFor="addressLine2">
-                    Address Line 2 (Optional)
-                  </Label>
-                  <Input
-                    id="addressLine2"
-                    {...form.register("addressLine2")}
-                  />
-                </div>
-                
-                {/* City */}
-                <div className="space-y-2">
-                  <Label htmlFor="city" className={cn(
-                    isMissing("city") && "text-red-500 font-medium"
-                  )}>
-                    City {isMissing("city") && "*"}
-                  </Label>
-                  <Input
-                    id="city"
-                    {...form.register("city")}
-                    className={cn(
-                      isMissing("city") && "border-red-500 focus-visible:ring-red-500"
-                    )}
-                  />
-                  {form.formState.errors.city && (
-                    <p className="text-red-500 text-sm">{form.formState.errors.city.message}</p>
-                  )}
-                </div>
-                
-                {/* State/Province */}
-                <div className="space-y-2">
-                  <Label htmlFor="state" className={cn(
-                    isMissing("state") && "text-red-500 font-medium"
-                  )}>
-                    State/Province {isMissing("state") && "*"}
-                  </Label>
-                  <Input
-                    id="state"
-                    {...form.register("state")}
-                    className={cn(
-                      isMissing("state") && "border-red-500 focus-visible:ring-red-500"
-                    )}
-                  />
-                  {form.formState.errors.state && (
-                    <p className="text-red-500 text-sm">{form.formState.errors.state.message}</p>
-                  )}
-                </div>
-                
-                {/* Zip/Postal Code */}
-                <div className="space-y-2">
-                  <Label htmlFor="zipCode" className={cn(
-                    isMissing("zipCode") && "text-red-500 font-medium"
-                  )}>
-                    ZIP/Postal Code {isMissing("zipCode") && "*"}
-                  </Label>
-                  <Input
-                    id="zipCode"
-                    {...form.register("zipCode")}
-                    className={cn(
-                      isMissing("zipCode") && "border-red-500 focus-visible:ring-red-500"
-                    )}
-                  />
-                  {form.formState.errors.zipCode && (
-                    <p className="text-red-500 text-sm">{form.formState.errors.zipCode.message}</p>
-                  )}
-                </div>
-                
-                {/* Country */}
-                <div className="space-y-2">
-                  <Label htmlFor="country" className={cn(
-                    isMissing("country") && "text-red-500 font-medium"
-                  )}>
-                    Country {isMissing("country") && "*"}
-                  </Label>
-                  <Input
-                    id="country"
-                    {...form.register("country")}
-                    className={cn(
-                      isMissing("country") && "border-red-500 focus-visible:ring-red-500"
-                    )}
-                  />
-                  {form.formState.errors.country && (
-                    <p className="text-red-500 text-sm">{form.formState.errors.country.message}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            {/* Order Information */}
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold">Freight Bill Information</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Ward Pro Number */}
-                <div className="space-y-2">
-                  <Label htmlFor="wardProNumber" className={cn(
-                    isMissing("wardProNumber") && "text-red-500 font-medium"
-                  )}>
-                    Ward Pro Number {isMissing("wardProNumber") && "*"}
-                  </Label>
-                  <Input
-                    id="wardProNumber"
-                    {...form.register("wardProNumber")}
-                    className={cn(
-                      isMissing("wardProNumber") && "border-red-500 focus-visible:ring-red-500"
-                    )}
-                  />
-                  {form.formState.errors.wardProNumber && (
-                    <p className="text-red-500 text-sm">{form.formState.errors.wardProNumber.message}</p>
-                  )}
-                </div>
-                
-                {/* Freight Bill Date */}
-                <div className="space-y-2">
-                  <Label htmlFor="freightBillDate" className={cn(
-                    isMissing("freightBillDate") && "text-red-500 font-medium"
-                  )}>
-                    Freight Bill Date {isMissing("freightBillDate") && "*"}
-                  </Label>
-                  <Input
-                    id="freightBillDate"
-                    type="date"
-                    {...form.register("freightBillDate")}
-                    className={cn(
-                      isMissing("freightBillDate") && "border-red-500 focus-visible:ring-red-500"
-                    )}
-                  />
-                  {form.formState.errors.freightBillDate && (
-                    <p className="text-red-500 text-sm">{form.formState.errors.freightBillDate.message}</p>
-                  )}
-                </div>
-                
-                {/* Product Name */}
-                <div className="space-y-2">
-                  <Label htmlFor="productName" className={cn(
-                    isMissing("productName") && "text-red-500 font-medium"
-                  )}>
-                    Product Name {isMissing("productName") && "*"}
-                  </Label>
-                  <Input
-                    id="productName"
-                    {...form.register("productName")}
-                    className={cn(
-                      isMissing("productName") && "border-red-500 focus-visible:ring-red-500"
-                    )}
-                  />
-                  {form.formState.errors.productName && (
-                    <p className="text-red-500 text-sm">{form.formState.errors.productName.message}</p>
-                  )}
-                </div>
-                
-                {/* Product SKU */}
-                <div className="space-y-2">
-                  <Label htmlFor="productSku" className={cn(
-                    isMissing("productSku") && "text-red-500 font-medium"
-                  )}>
-                    Product SKU/ID {isMissing("productSku") && "*"}
-                  </Label>
-                  <Input
-                    id="productSku"
-                    {...form.register("productSku")}
-                    className={cn(
-                      isMissing("productSku") && "border-red-500 focus-visible:ring-red-500"
-                    )}
-                  />
-                </div>
-                
-                {/* Product Quantity */}
-                <div className="space-y-2">
-                  <Label htmlFor="productQuantity" className={cn(
-                    isMissing("productQuantity") && "text-red-500 font-medium"
-                  )}>
-                    Quantity {isMissing("productQuantity") && "*"}
-                  </Label>
-                  <Input
-                    id="productQuantity"
-                    type="number"
-                    min="1"
-                    {...form.register("productQuantity")}
-                    className={cn(
-                      isMissing("productQuantity") && "border-red-500 focus-visible:ring-red-500"
-                    )}
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex justify-between">
-              <Button type="button" variant="outline" onClick={onCancel}>
-                Cancel
-              </Button>
-              <Button type="button" onClick={() => setActiveTab("shipmentDetails")}>
-                Next: Shipping Details
-              </Button>
-            </div>
-          </div>
-        )}
-        
-        {activeTab === "shipmentDetails" && (
-          <div className="space-y-8">
-            {/* Claim Information */}
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold">Claim Information</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Claim Amount */}
-                <div className="space-y-2">
-                  <Label htmlFor="claimAmount" className={cn(
-                    isMissing("claimAmount") && "text-red-500 font-medium"
-                  )}>
-                    Claim Amount ($) {isMissing("claimAmount") && "*"}
-                  </Label>
-                  <Input
-                    id="claimAmount"
-                    {...form.register("claimAmount")}
-                    className={cn(
-                      isMissing("claimAmount") && "border-red-500 focus-visible:ring-red-500"
-                    )}
-                  />
-                  {form.formState.errors.claimAmount && (
-                    <p className="text-red-500 text-sm">{form.formState.errors.claimAmount.message}</p>
-                  )}
-                </div>
-                
-                {/* Claim Type */}
-                <div className="space-y-2">
-                  <Label htmlFor="claimType" className={cn(
-                    isMissing("claimType") && "text-red-500 font-medium"
-                  )}>
-                    Claim Type {isMissing("claimType") && "*"}
-                  </Label>
-                  <Select 
-                    onValueChange={(value) => form.setValue("claimType", value)} 
-                    defaultValue={form.getValues("claimType")}
-                  >
-                    <SelectTrigger className={cn(
-                      isMissing("claimType") && "border-red-500 focus-visible:ring-red-500"
-                    )}>
-                      <SelectValue placeholder="Select claim type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Damaged Product">Damaged Product</SelectItem>
-                      <SelectItem value="Missing Item">Missing Item</SelectItem>
-                      <SelectItem value="Wrong Item">Wrong Item</SelectItem>
-                      <SelectItem value="Quality Issue">Quality Issue</SelectItem>
-                      <SelectItem value="Warranty Claim">Warranty Claim</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {form.formState.errors.claimType && (
-                    <p className="text-red-500 text-sm">{form.formState.errors.claimType.message}</p>
-                  )}
-                </div>
-                
-                {/* Date of Incident */}
-                <div className="space-y-2">
-                  <Label htmlFor="dateOfIncident" className={cn(
-                    isMissing("dateOfIncident") && "text-red-500 font-medium"
-                  )}>
-                    Date of Incident {isMissing("dateOfIncident") && "*"}
-                  </Label>
-                  <Input
-                    id="dateOfIncident"
-                    type="date"
-                    {...form.register("dateOfIncident")}
-                    className={cn(
-                      isMissing("dateOfIncident") && "border-red-500 focus-visible:ring-red-500"
-                    )}
-                  />
-                  {form.formState.errors.dateOfIncident && (
-                    <p className="text-red-500 text-sm">{form.formState.errors.dateOfIncident.message}</p>
-                  )}
-                </div>
-                
-                {/* Preferred Resolution */}
-                <div className="space-y-2">
-                  <Label htmlFor="preferredResolution" className={cn(
-                    isMissing("preferredResolution") && "text-red-500 font-medium"
-                  )}>
-                    Preferred Resolution {isMissing("preferredResolution") && "*"}
-                  </Label>
-                  <Select
-                    onValueChange={(value) => form.setValue("preferredResolution", value)}
-                    defaultValue={form.getValues("preferredResolution")}
-                  >
-                    <SelectTrigger className={cn(
-                      isMissing("preferredResolution") && "border-red-500 focus-visible:ring-red-500"
-                    )}>
-                      <SelectValue placeholder="Select preferred resolution" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Refund">Full Refund</SelectItem>
-                      <SelectItem value="Replacement">Replacement</SelectItem>
-                      <SelectItem value="Repair">Repair</SelectItem>
-                      <SelectItem value="Partial Refund">Partial Refund</SelectItem>
-                      <SelectItem value="Exchange">Exchange</SelectItem>
-                      <SelectItem value="Credit">Store Credit</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {form.formState.errors.preferredResolution && (
-                    <p className="text-red-500 text-sm">{form.formState.errors.preferredResolution.message}</p>
-                  )}
-                </div>
-              </div>
-              
-              {/* Claim Description */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Ward Pro Number */}
               <div className="space-y-2">
-                <Label htmlFor="description" className={cn(
-                  isMissing("description") && "text-red-500 font-medium"
+                <Label htmlFor="wardProNumber" className={cn(
+                  isMissing("wardProNumber") && "text-red-500 font-medium"
                 )}>
-                  Claim Description {isMissing("description") && "*"}
-                </Label>
-                <Textarea
-                  id="description"
-                  rows={3}
-                  {...form.register("description")}
-                  className={cn(
-                    isMissing("description") && "border-red-500 focus-visible:ring-red-500"
-                  )}
-                  placeholder="Please provide a detailed description of the claim..."
-                />
-                {form.formState.errors.description && (
-                  <p className="text-red-500 text-sm">{form.formState.errors.description.message}</p>
-                )}
-              </div>
-              
-              {/* Damage Description */}
-              <div className="space-y-2">
-                <Label htmlFor="damageDescription" className={cn(
-                  isMissing("damageDescription") && "text-red-500 font-medium"
-                )}>
-                  Damage/Issue Description {isMissing("damageDescription") && "*"}
-                </Label>
-                <Textarea
-                  id="damageDescription"
-                  rows={3}
-                  {...form.register("damageDescription")}
-                  className={cn(
-                    isMissing("damageDescription") && "border-red-500 focus-visible:ring-red-500"
-                  )}
-                  placeholder="Please describe the damage or issue in detail..."
-                />
-                {form.formState.errors.damageDescription && (
-                  <p className="text-red-500 text-sm">{form.formState.errors.damageDescription.message}</p>
-                )}
-              </div>
-              
-              {/* Signature */}
-              <div className="space-y-2">
-                <Label htmlFor="signature" className={cn(
-                  isMissing("signature") && "text-red-500 font-medium"
-                )}>
-                  Electronic Signature {isMissing("signature") && "*"}
+                  Ward Pro Number {isMissing("wardProNumber") && "*"}
                 </Label>
                 <Input
-                  id="signature"
-                  {...form.register("signature")}
+                  id="wardProNumber"
+                  {...form.register("wardProNumber")}
                   className={cn(
-                    isMissing("signature") && "border-red-500 focus-visible:ring-red-500"
+                    isMissing("wardProNumber") && "border-red-500 focus-visible:ring-red-500"
                   )}
-                  placeholder="Type your full name to sign"
                 />
-                <p className="text-xs text-muted-foreground">
-                  By typing your name above, you certify that all information provided is true and accurate to the best of your knowledge.
-                </p>
+                {form.formState.errors.wardProNumber && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.wardProNumber.message}</p>
+                )}
               </div>
               
-              {/* Attachments */}
+              {/* Today's Date */}
               <div className="space-y-2">
-                <Label htmlFor="attachments" className={cn(
-                  isMissing("attachments") && "text-red-500 font-medium"
+                <Label htmlFor="todaysDate" className={cn(
+                  isMissing("todaysDate") && "text-red-500 font-medium"
                 )}>
-                  Supporting Documents {isMissing("attachments") && "*"}
+                  Today's Date {isMissing("todaysDate") && "*"}
                 </Label>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Please upload any supporting documents such as photos, receipts, or invoices.
-                </p>
-                <div className="flex items-center justify-center border-2 border-dashed rounded-md p-6">
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground">
-                      Document upload functionality is handled separately.
-                    </p>
-                  </div>
-                </div>
+                <Input
+                  id="todaysDate"
+                  type="date"
+                  {...form.register("todaysDate")}
+                  className={cn(
+                    isMissing("todaysDate") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.todaysDate && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.todaysDate.message}</p>
+                )}
+              </div>
+              
+              {/* Freight Bill Date */}
+              <div className="space-y-2">
+                <Label htmlFor="freightBillDate" className={cn(
+                  isMissing("freightBillDate") && "text-red-500 font-medium"
+                )}>
+                  Freight Bill Date {isMissing("freightBillDate") && "*"}
+                </Label>
+                <Input
+                  id="freightBillDate"
+                  type="date"
+                  {...form.register("freightBillDate")}
+                  className={cn(
+                    isMissing("freightBillDate") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.freightBillDate && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.freightBillDate.message}</p>
+                )}
+              </div>
+              
+              {/* Claimant's Reference Number */}
+              <div className="space-y-2">
+                <Label htmlFor="claimantsRefNumber" className={cn(
+                  isMissing("claimantsRefNumber") && "text-red-500 font-medium"
+                )}>
+                  Claimant's Reference Number {isMissing("claimantsRefNumber") && "*"}
+                </Label>
+                <Input
+                  id="claimantsRefNumber"
+                  {...form.register("claimantsRefNumber")}
+                  className={cn(
+                    isMissing("claimantsRefNumber") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.claimantsRefNumber && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.claimantsRefNumber.message}</p>
+                )}
               </div>
             </div>
+          </div>
+          
+          {/* Claim Amount Section */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Claim Amount</h2>
             
-            <div className="flex justify-between">
-              <Button type="button" variant="outline" onClick={() => setActiveTab("claimInfo")}>
-                Back: Claim Information
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Submitting..." : "Submit Claim"}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Claim Amount */}
+              <div className="space-y-2">
+                <Label htmlFor="claimAmount" className={cn(
+                  isMissing("claimAmount") && "text-red-500 font-medium"
+                )}>
+                  Amount ($) {isMissing("claimAmount") && "*"}
+                </Label>
+                <Input
+                  id="claimAmount"
+                  {...form.register("claimAmount")}
+                  className={cn(
+                    isMissing("claimAmount") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.claimAmount && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.claimAmount.message}</p>
+                )}
+              </div>
+              
+              {/* Claim Type */}
+              <div className="space-y-2">
+                <Label htmlFor="claimType" className={cn(
+                  isMissing("claimType") && "text-red-500 font-medium"
+                )}>
+                  Claim Type {isMissing("claimType") && "*"}
+                </Label>
+                <Select 
+                  onValueChange={(value) => form.setValue("claimType", value)} 
+                  defaultValue={form.getValues("claimType")}
+                >
+                  <SelectTrigger className={cn(
+                    isMissing("claimType") && "border-red-500 focus-visible:ring-red-500"
+                  )}>
+                    <SelectValue placeholder="Select claim type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Shortage">Shortage</SelectItem>
+                    <SelectItem value="Damage">Damage</SelectItem>
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.claimType && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.claimType.message}</p>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Shipper Information Section */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Shipper Information</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Shipper Name */}
+              <div className="space-y-2">
+                <Label htmlFor="shipperName" className={cn(
+                  isMissing("shipperName") && "text-red-500 font-medium"
+                )}>
+                  Shipper Name {isMissing("shipperName") && "*"}
+                </Label>
+                <Input
+                  id="shipperName"
+                  {...form.register("shipperName")}
+                  className={cn(
+                    isMissing("shipperName") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.shipperName && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.shipperName.message}</p>
+                )}
+              </div>
+              
+              {/* Shipper Address */}
+              <div className="space-y-2">
+                <Label htmlFor="shipperAddress" className={cn(
+                  isMissing("shipperAddress") && "text-red-500 font-medium"
+                )}>
+                  Shipper Address {isMissing("shipperAddress") && "*"}
+                </Label>
+                <Input
+                  id="shipperAddress"
+                  {...form.register("shipperAddress")}
+                  className={cn(
+                    isMissing("shipperAddress") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.shipperAddress && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.shipperAddress.message}</p>
+                )}
+              </div>
+              
+              {/* Shipper Phone */}
+              <div className="space-y-2">
+                <Label htmlFor="shipperPhone" className={cn(
+                  isMissing("shipperPhone") && "text-red-500 font-medium"
+                )}>
+                  Shipper Phone {isMissing("shipperPhone") && "*"}
+                </Label>
+                <Input
+                  id="shipperPhone"
+                  {...form.register("shipperPhone")}
+                  className={cn(
+                    isMissing("shipperPhone") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.shipperPhone && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.shipperPhone.message}</p>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Consignee Information Section */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Consignee Information</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Consignee Name */}
+              <div className="space-y-2">
+                <Label htmlFor="consigneeName" className={cn(
+                  isMissing("consigneeName") && "text-red-500 font-medium"
+                )}>
+                  Consignee Name {isMissing("consigneeName") && "*"}
+                </Label>
+                <Input
+                  id="consigneeName"
+                  {...form.register("consigneeName")}
+                  className={cn(
+                    isMissing("consigneeName") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.consigneeName && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.consigneeName.message}</p>
+                )}
+              </div>
+              
+              {/* Consignee Address */}
+              <div className="space-y-2">
+                <Label htmlFor="consigneeAddress" className={cn(
+                  isMissing("consigneeAddress") && "text-red-500 font-medium"
+                )}>
+                  Consignee Address {isMissing("consigneeAddress") && "*"}
+                </Label>
+                <Input
+                  id="consigneeAddress"
+                  {...form.register("consigneeAddress")}
+                  className={cn(
+                    isMissing("consigneeAddress") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.consigneeAddress && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.consigneeAddress.message}</p>
+                )}
+              </div>
+              
+              {/* Consignee Phone */}
+              <div className="space-y-2">
+                <Label htmlFor="consigneePhone" className={cn(
+                  isMissing("consigneePhone") && "text-red-500 font-medium"
+                )}>
+                  Consignee Phone {isMissing("consigneePhone") && "*"}
+                </Label>
+                <Input
+                  id="consigneePhone"
+                  {...form.register("consigneePhone")}
+                  className={cn(
+                    isMissing("consigneePhone") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.consigneePhone && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.consigneePhone.message}</p>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Detailed Statement Section */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Detailed Statement</h2>
+            
+            <div className="space-y-4">
+              {/* Claim Description */}
+              <div className="space-y-2">
+                <Label htmlFor="claimDescription" className={cn(
+                  isMissing("claimDescription") && "text-red-500 font-medium"
+                )}>
+                  Detailed Statement of Claim {isMissing("claimDescription") && "*"}
+                </Label>
+                <Textarea
+                  id="claimDescription"
+                  rows={5}
+                  {...form.register("claimDescription")}
+                  className={cn(
+                    isMissing("claimDescription") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.claimDescription && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.claimDescription.message}</p>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Supporting Documents */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">The Following Documents Are Submitted In Support Of This Claim</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="originalBillOfLading" 
+                  checked={form.watch("originalBillOfLading")}
+                  onCheckedChange={(checked) => 
+                    form.setValue("originalBillOfLading", checked as boolean)
+                  }
+                />
+                <Label htmlFor="originalBillOfLading" className="font-normal">
+                  Original Bill of Lading
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="originalFreightBill" 
+                  checked={form.watch("originalFreightBill")}
+                  onCheckedChange={(checked) => 
+                    form.setValue("originalFreightBill", checked as boolean)
+                  }
+                />
+                <Label htmlFor="originalFreightBill" className="font-normal">
+                  Original Freight Bill
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="originalInvoice" 
+                  checked={form.watch("originalInvoice")}
+                  onCheckedChange={(checked) => 
+                    form.setValue("originalInvoice", checked as boolean)
+                  }
+                />
+                <Label htmlFor="originalInvoice" className="font-normal">
+                  Original Invoice
+                </Label>
+              </div>
+            </div>
+          </div>
+          
+          {/* Is Merchandise Repairable */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Additional Information</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="isRepairable" className={cn(
+                  isMissing("isRepairable") && "text-red-500 font-medium"
+                )}>
+                  Is Merchandise Repairable? {isMissing("isRepairable") && "*"}
+                </Label>
+                <Select 
+                  onValueChange={(value) => form.setValue("isRepairable", value)} 
+                  defaultValue={form.getValues("isRepairable")}
+                >
+                  <SelectTrigger className={cn(
+                    isMissing("isRepairable") && "border-red-500 focus-visible:ring-red-500"
+                  )}>
+                    <SelectValue placeholder="Select option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Yes">Yes</SelectItem>
+                    <SelectItem value="No">No</SelectItem>
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.isRepairable && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.isRepairable.message}</p>
+                )}
+              </div>
+              
+              {form.watch("isRepairable") === "Yes" && (
+                <div className="space-y-2">
+                  <Label htmlFor="repairCost" className={cn(
+                    isMissing("repairCost") && "text-red-500 font-medium"
+                  )}>
+                    Repair Cost ($) {isMissing("repairCost") && "*"}
+                  </Label>
+                  <Input
+                    id="repairCost"
+                    {...form.register("repairCost")}
+                    className={cn(
+                      isMissing("repairCost") && "border-red-500 focus-visible:ring-red-500"
+                    )}
+                  />
+                  {form.formState.errors.repairCost && (
+                    <p className="text-red-500 text-sm">{form.formState.errors.repairCost.message}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Claimant Information */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Claimant Information</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="companyName" className={cn(
+                  isMissing("companyName") && "text-red-500 font-medium"
+                )}>
+                  Company Name {isMissing("companyName") && "*"}
+                </Label>
+                <Input
+                  id="companyName"
+                  {...form.register("companyName")}
+                  className={cn(
+                    isMissing("companyName") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.companyName && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.companyName.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="address" className={cn(
+                  isMissing("address") && "text-red-500 font-medium"
+                )}>
+                  Address {isMissing("address") && "*"}
+                </Label>
+                <Input
+                  id="address"
+                  {...form.register("address")}
+                  className={cn(
+                    isMissing("address") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.address && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.address.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="contactPerson" className={cn(
+                  isMissing("contactPerson") && "text-red-500 font-medium"
+                )}>
+                  Contact Person {isMissing("contactPerson") && "*"}
+                </Label>
+                <Input
+                  id="contactPerson"
+                  {...form.register("contactPerson")}
+                  className={cn(
+                    isMissing("contactPerson") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.contactPerson && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.contactPerson.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email" className={cn(
+                  isMissing("email") && "text-red-500 font-medium"
+                )}>
+                  Email {isMissing("email") && "*"}
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  {...form.register("email")}
+                  className={cn(
+                    isMissing("email") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.email && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.email.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="phone" className={cn(
+                  isMissing("phone") && "text-red-500 font-medium"
+                )}>
+                  Phone {isMissing("phone") && "*"}
+                </Label>
+                <Input
+                  id="phone"
+                  {...form.register("phone")}
+                  className={cn(
+                    isMissing("phone") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.phone && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.phone.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="fax">
+                  Fax (Optional)
+                </Label>
+                <Input
+                  id="fax"
+                  {...form.register("fax")}
+                  placeholder="Fax number"
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Verification Statement */}
+          <div className="space-y-4 p-4 border rounded-md bg-gray-50">
+            <p className="text-sm">
+              I certify that the foregoing statement of facts is true and correct, and acknowledge that the submission of a fraudulent claim may subject the claimant to legal action.
+            </p>
+            
+            <div className="space-y-2">
+              <Label htmlFor="signature" className={cn(
+                isMissing("signature") && "text-red-500 font-medium"
+              )}>
+                Authorized Signature {isMissing("signature") && "*"}
+              </Label>
+              <Input
+                id="signature"
+                {...form.register("signature")}
+                className={cn(
+                  isMissing("signature") && "border-red-500 focus-visible:ring-red-500"
+                )}
+                placeholder="Type full name to sign"
+              />
+              {form.formState.errors.signature && (
+                <p className="text-red-500 text-sm">{form.formState.errors.signature.message}</p>
+              )}
+            </div>
+            
+            <div className="flex justify-end">
+              <Button type="button" variant="outline" className="text-sm">
+                Print Form
               </Button>
             </div>
           </div>
-        )}
+          
+          {/* Form Footer */}
+          <div className="flex justify-between">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Submitting..." : "Submit Claim"}
+            </Button>
+          </div>
+        </div>
       </form>
     </div>
   );

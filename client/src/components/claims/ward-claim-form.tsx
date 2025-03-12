@@ -1,24 +1,30 @@
-import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertCircle } from "lucide-react";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Claim } from "@shared/schema";
 
-// Ward claim form validation schema
+// Define form schema
 const wardClaimFormSchema = z.object({
-  // Ward specific required fields
-  wardProNumber: z.string().min(1, "Ward PRO# is required"),
+  // Ward Trucking specific fields
+  wardProNumber: z.string().min(1, "Ward Pro Number is required"),
   todaysDate: z.string().min(1, "Today's date is required"),
   freightBillDate: z.string().min(1, "Freight bill date is required"),
-  claimantsRefNumber: z.string().min(1, "Claimant's ref number is required"),
-  
-  // Claim amount and type
+  claimantsRefNumber: z.string().optional(),
   claimAmount: z.string().min(1, "Claim amount is required"),
   claimType: z.string().min(1, "Claim type is required"),
   
@@ -33,29 +39,30 @@ const wardClaimFormSchema = z.object({
   consigneePhone: z.string().min(1, "Consignee phone is required"),
   
   // Claim details
-  detailedStatement: z.string().min(10, "A detailed statement is required (min 10 characters)"),
-  
-  // Company and contact info
-  companyName: z.string().min(1, "Company name is required"),
-  companyAddress: z.string().min(1, "Company address is required"),
-  contactPerson: z.string().min(1, "Contact person is required"),
-  emailAddress: z.string().email("Invalid email address").min(1, "Email is required"),
-  phone: z.string().min(10, "Phone number is required (min 10 digits)"),
+  claimDescription: z.string().min(1, "Description is required"),
   
   // Supporting documents
   originalBillOfLading: z.boolean().optional(),
   originalFreightBill: z.boolean().optional(),
   originalInvoice: z.boolean().optional(),
   
-  // Merchandise status
-  merchandiseRepairable: z.string().optional(),
+  // Additional information
+  isRepairable: z.string().min(1, "Please indicate if merchandise is repairable"),
   repairCost: z.string().optional(),
   
+  // Claimant information
+  companyName: z.string().min(1, "Company name is required"),
+  address: z.string().min(1, "Address is required"),
+  contactPerson: z.string().min(1, "Contact person is required"),
+  email: z.string().email("Invalid email address").min(1, "Email is required"),
+  phone: z.string().min(1, "Phone number is required"),
+  fax: z.string().optional(),
+  
   // Signature
-  signature: z.string().min(1, "Signature is required")
+  signature: z.string().optional(),
 });
 
-type WardClaimFormValues = z.infer<typeof wardClaimFormSchema>;
+export type WardClaimFormValues = z.infer<typeof wardClaimFormSchema>;
 
 interface WardClaimFormProps {
   initialData?: Partial<Claim>;
@@ -65,32 +72,26 @@ interface WardClaimFormProps {
   isLoading?: boolean;
 }
 
-export function WardClaimForm({
-  initialData = {},
-  onSubmit,
-  onCancel,
+export function WardClaimForm({ 
+  initialData = {}, 
+  onSubmit, 
+  onCancel, 
   missingFields = [],
-  isLoading = false
+  isLoading = false 
 }: WardClaimFormProps) {
-  // Current date for default values
-  const today = new Date().toISOString().split('T')[0];
-  
-  // Form definition
   const form = useForm<WardClaimFormValues>({
     resolver: zodResolver(wardClaimFormSchema),
     defaultValues: {
-      // Ward specific fields
+      // Ward Trucking specific fields
       wardProNumber: initialData.wardProNumber || "",
-      todaysDate: initialData.todaysDate || today,
+      todaysDate: initialData.todaysDate || new Date().toISOString().split('T')[0],
       freightBillDate: initialData.freightBillDate || "",
       claimantsRefNumber: initialData.claimantsRefNumber || "",
-      
-      // Claim amount and type
       claimAmount: initialData.claimAmount || "",
-      claimType: initialData.claimType || "",
+      claimType: initialData.claimType || "Damage",
       
       // Shipper information
-      shipperName: initialData.shipperName || "",
+      shipperName: initialData.shipperName || "", 
       shipperAddress: initialData.shipperAddress || "",
       shipperPhone: initialData.shipperPhone || "",
       
@@ -100,680 +101,628 @@ export function WardClaimForm({
       consigneePhone: initialData.consigneePhone || "",
       
       // Claim details
-      detailedStatement: initialData.detailedStatement || "",
+      claimDescription: initialData.claimDescription || "",
       
-      // Company and contact info
-      companyName: initialData.companyName || "",
-      companyAddress: initialData.companyAddress || "",
-      contactPerson: initialData.contactPerson || "",
-      emailAddress: initialData.email || "",
-      phone: initialData.phone || "",
+      // Supporting documents - these would be checkboxes
+      originalBillOfLading: initialData.originalBillOfLading || false,
+      originalFreightBill: initialData.originalFreightBill || false,
+      originalInvoice: initialData.originalInvoice || false,
       
-      // Supporting documents
-      originalBillOfLading: initialData.originalBillOfLading === "true" || false,
-      originalFreightBill: initialData.originalFreightBill === "true" || false,
-      originalInvoice: initialData.originalInvoice === "true" || false,
-      
-      // Merchandise status
-      merchandiseRepairable: initialData.merchandiseRepairable || "",
+      // Additional information
+      isRepairable: initialData.isRepairable || "No",
       repairCost: initialData.repairCost || "",
       
-      // Signature
-      signature: initialData.signature || ""
-    }
+      // Claimant information
+      companyName: initialData.companyName || "Ward Trucking Corp",
+      address: initialData.address || "",
+      contactPerson: initialData.contactPerson || "",
+      email: initialData.email || "",
+      phone: initialData.phone || "",
+      fax: initialData.fax || "",
+      
+      signature: initialData.signature || "",
+    },
   });
-  
-  const [claimTypeValue, setClaimTypeValue] = useState(initialData.claimType || "");
-  const [isRepairable, setIsRepairable] = useState(initialData.merchandiseRepairable === "Yes");
   
   const handleSubmit = (data: WardClaimFormValues) => {
     onSubmit(data);
   };
   
+  // Check if a field is missing
+  const isMissing = (fieldName: string): boolean => {
+    return missingFields.some(field => {
+      // Handle field name variations (camelCase vs. spaces)
+      const normalizedField = field.toLowerCase().replace(/\s+/g, "");
+      const normalizedFieldName = fieldName.toLowerCase();
+      return normalizedField.includes(normalizedFieldName) || normalizedFieldName.includes(normalizedField);
+    });
+  };
+  
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        {/* Header with Ward logo */}
-        <div className="bg-white p-4 rounded-t-lg border border-gray-200">
-          <div className="flex flex-col md:flex-row justify-between items-start">
-            <div className="flex-1">
-              <h1 className="text-xl font-bold text-green-800 uppercase mb-1">WARD TRUCKING, LLC</h1>
-              <p className="text-sm">P.O. Box 1553</p>
-              <p className="text-sm">Altoona, PA 16603</p>
-              <p className="text-sm">Ph: 800-458-3625</p>
-              <p className="text-sm">Fax: 814-946-4628</p>
+    <div className="flex flex-col w-full">
+      {/* Header with logo and form title */}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-primary">Ward Trucking Corp</h1>
+          <p className="text-muted-foreground">Freight Claim Form</p>
+        </div>
+        <img src="/assets/logo.png" alt="Boon Logo" className="h-16 w-auto" />
+      </div>
+      
+      {/* Missing information alert */}
+      {missingFields.length > 0 && (
+        <Card className="mb-6 border-amber-500 bg-amber-50">
+          <CardHeader className="pb-2">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
+              <CardTitle className="text-amber-700 text-lg">Missing Information</CardTitle>
             </div>
+          </CardHeader>
+          <CardContent>
+            <CardDescription className="text-amber-700">
+              The following information is missing from the claim:
+            </CardDescription>
+            <ul className="mt-2 pl-6 list-disc">
+              {missingFields.map((field, index) => (
+                <li key={index} className="text-amber-700">{field}</li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Form header */}
+      <div className="flex mb-6 border-b">
+        <h2 className="px-4 py-2 font-medium text-lg text-primary border-b-2 border-primary">
+          Ward Trucking Loss and Damage Claim Form
+        </h2>
+      </div>
+      
+      {/* Main Form */}
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+        <div className="space-y-8">
+          {/* Ward Pro Information */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Claim Information</h2>
             
-            <div className="mt-4 md:mt-0 md:text-right">
-              <h2 className="text-lg font-semibold uppercase mb-3">STANDARD FORM FOR PRESENTATION OF LOSS AND DAMAGE CLAIM</h2>
-              <h2 className="text-base font-medium uppercase mb-1">TO: WARD TRUCKING CORP</h2>
-              <p className="text-sm">Claims Department</p>
-              <p className="text-sm">P.O. Box 1553</p>
-              <p className="text-sm">Altoona, PA 16603</p>
-              <p className="text-sm">814-946-8242</p>
-            </div>
-          </div>
-        </div>
-        
-        {/* Claim Identifier Fields */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <FormField
-            control={form.control}
-            name="wardProNumber"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="font-bold">WARD PRO#</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter Ward PRO number" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="todaysDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="font-bold">TODAY'S DATE</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="freightBillDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="font-bold">FREIGHT BILL DATE</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="claimantsRefNumber"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="font-bold">CLAIMANT'S REF #</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter reference number" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        
-        {/* Claim Amount and Type Section */}
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <div className="mb-4">
-            <p className="text-sm font-medium">This claim for $
-              <FormField
-                control={form.control}
-                name="claimAmount"
-                render={({ field }) => (
-                  <span className="inline-block">
-                    <FormControl>
-                      <Input 
-                        placeholder="Amount" 
-                        className="w-32 inline mx-2" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage className="block text-xs mt-1" />
-                  </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Ward Pro Number */}
+              <div className="space-y-2">
+                <Label htmlFor="wardProNumber" className={cn(
+                  isMissing("wardProNumber") && "text-red-500 font-medium"
+                )}>
+                  Ward Pro Number {isMissing("wardProNumber") && "*"}
+                </Label>
+                <Input
+                  id="wardProNumber"
+                  {...form.register("wardProNumber")}
+                  className={cn(
+                    isMissing("wardProNumber") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.wardProNumber && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.wardProNumber.message}</p>
                 )}
-              />
-              is made against Ward in connection with the following described shipment:
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-4 ml-8 mb-2">
-            <FormField
-              control={form.control}
-              name="claimType"
-              render={({ field }) => (
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={field.value === "Shortage"}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          field.onChange("Shortage");
-                          setClaimTypeValue("Shortage");
-                        }
-                      }}
-                      id="shortage-checkbox"
-                    />
-                    <label
-                      htmlFor="shortage-checkbox"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      shortage
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={field.value === "Damage"}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          field.onChange("Damage");
-                          setClaimTypeValue("Damage");
-                        }
-                      }}
-                      id="damage-checkbox"
-                    />
-                    <label
-                      htmlFor="damage-checkbox"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      damage
-                    </label>
-                  </div>
-                </div>
-              )}
-            />
-          </div>
-          <FormMessage className="ml-8 text-xs" />
-        </div>
-        
-        {/* Shipper and Consignee Information - Side by Side */}
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Shipper Information */}
-            <div>
-              <h2 className="font-bold mb-4 text-gray-800 text-sm underline">Shipper:</h2>
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="shipperName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm">Name:</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter shipper name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="shipperAddress"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm">Address:</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Enter shipper address" 
-                          className="resize-none min-h-[80px]"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="shipperPhone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm">Phone:</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter shipper phone" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
-            </div>
-            
-            {/* Consignee Information */}
-            <div>
-              <h2 className="font-bold mb-4 text-gray-800 text-sm underline">Consignee:</h2>
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="consigneeName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm">Name:</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter consignee name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+              
+              {/* Today's Date */}
+              <div className="space-y-2">
+                <Label htmlFor="todaysDate" className={cn(
+                  isMissing("todaysDate") && "text-red-500 font-medium"
+                )}>
+                  Today's Date {isMissing("todaysDate") && "*"}
+                </Label>
+                <Input
+                  id="todaysDate"
+                  type="date"
+                  {...form.register("todaysDate")}
+                  className={cn(
+                    isMissing("todaysDate") && "border-red-500 focus-visible:ring-red-500"
                   )}
                 />
-                
-                <FormField
-                  control={form.control}
-                  name="consigneeAddress"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm">Address:</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Enter consignee address" 
-                          className="resize-none min-h-[80px]"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                {form.formState.errors.todaysDate && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.todaysDate.message}</p>
+                )}
+              </div>
+              
+              {/* Freight Bill Date */}
+              <div className="space-y-2">
+                <Label htmlFor="freightBillDate" className={cn(
+                  isMissing("freightBillDate") && "text-red-500 font-medium"
+                )}>
+                  Freight Bill Date {isMissing("freightBillDate") && "*"}
+                </Label>
+                <Input
+                  id="freightBillDate"
+                  type="date"
+                  {...form.register("freightBillDate")}
+                  className={cn(
+                    isMissing("freightBillDate") && "border-red-500 focus-visible:ring-red-500"
                   )}
                 />
-                
-                <FormField
-                  control={form.control}
-                  name="consigneePhone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm">Phone:</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter consignee phone" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                {form.formState.errors.freightBillDate && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.freightBillDate.message}</p>
+                )}
+              </div>
+              
+              {/* Claimant's Reference Number */}
+              <div className="space-y-2">
+                <Label htmlFor="claimantsRefNumber" className={cn(
+                  isMissing("claimantsRefNumber") && "text-red-500 font-medium"
+                )}>
+                  Claimant's Reference Number {isMissing("claimantsRefNumber") && "*"}
+                </Label>
+                <Input
+                  id="claimantsRefNumber"
+                  {...form.register("claimantsRefNumber")}
+                  className={cn(
+                    isMissing("claimantsRefNumber") && "border-red-500 focus-visible:ring-red-500"
                   )}
                 />
+                {form.formState.errors.claimantsRefNumber && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.claimantsRefNumber.message}</p>
+                )}
               </div>
             </div>
           </div>
-        </div>
-        
-        {/* Detailed Claim Statement */}
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <h2 className="text-center font-bold mb-1 text-gray-800 text-sm">Detailed Statement Showing How Amount Claimed Was Determined</h2>
-          <p className="text-xs text-gray-600 mb-4 italic">
-            (Number and description of articles, nature and extent of shortage or damage, invoice price of articles, amount of claim, etc. All discount and allowances must be shown. Use an additional sheet as needed.)
-          </p>
           
-          <FormField
-            control={form.control}
-            name="detailedStatement"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <div className="border border-gray-300 rounded-md">
-                    <div className="grid grid-cols-5 border-b">
-                      <div className="col-span-4 border-r py-2 px-4 bg-gray-100">
-                        <span className="text-sm font-medium">Item Details</span>
-                      </div>
-                      <div className="col-span-1 py-2 px-4 bg-gray-100">
-                        <span className="text-sm font-medium">Amount</span>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-5 border-b">
-                      <div className="col-span-4 border-r p-2">
-                        <Textarea 
-                          placeholder="Enter article details and description" 
-                          className="border-0 focus-visible:ring-0 resize-none min-h-[120px]"
-                          {...field}
-                        />
-                      </div>
-                      <div className="col-span-1 p-2">
-                        <Input 
-                          type="text"
-                          className="h-full border-0 focus-visible:ring-0"
-                          placeholder="$0.00"
-                          value={form.watch('claimAmount')} 
-                          disabled
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-5 border-b">
-                      <div className="col-span-4 border-r p-2 text-right">
-                        <span className="font-bold">Total Amount Claimed:</span>
-                      </div>
-                      <div className="col-span-1 p-2">
-                        <Input 
-                          type="text"
-                          className="border-0 focus-visible:ring-0 font-bold"
-                          value={form.watch('claimAmount') ? `$${form.watch('claimAmount')}` : '$0.00'} 
-                          disabled
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        
-        {/* Supporting Documents */}
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <p className="mb-2 text-sm text-gray-800">The following documents are submitted in support of this claim:</p>
+          {/* Claim Amount Section */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Claim Amount</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Claim Amount */}
+              <div className="space-y-2">
+                <Label htmlFor="claimAmount" className={cn(
+                  isMissing("claimAmount") && "text-red-500 font-medium"
+                )}>
+                  Amount ($) {isMissing("claimAmount") && "*"}
+                </Label>
+                <Input
+                  id="claimAmount"
+                  {...form.register("claimAmount")}
+                  className={cn(
+                    isMissing("claimAmount") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.claimAmount && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.claimAmount.message}</p>
+                )}
+              </div>
+              
+              {/* Claim Type */}
+              <div className="space-y-2">
+                <Label htmlFor="claimType" className={cn(
+                  isMissing("claimType") && "text-red-500 font-medium"
+                )}>
+                  Claim Type {isMissing("claimType") && "*"}
+                </Label>
+                <Select 
+                  onValueChange={(value) => form.setValue("claimType", value)} 
+                  defaultValue={form.getValues("claimType")}
+                >
+                  <SelectTrigger className={cn(
+                    isMissing("claimType") && "border-red-500 focus-visible:ring-red-500"
+                  )}>
+                    <SelectValue placeholder="Select claim type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Shortage">Shortage</SelectItem>
+                    <SelectItem value="Damage">Damage</SelectItem>
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.claimType && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.claimType.message}</p>
+                )}
+              </div>
+            </div>
+          </div>
           
-          <div className="space-y-2">
-            <FormField
-              control={form.control}
-              name="originalBillOfLading"
-              render={({ field }) => (
-                <div className="flex items-center">
-                  <FormControl>
-                    <Checkbox
-                      id="bill-of-lading"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      className="mr-2"
-                    />
-                  </FormControl>
-                  <label htmlFor="bill-of-lading" className="text-sm cursor-pointer">
-                    Original Bill of Lading *
-                  </label>
-                </div>
-              )}
-            />
+          {/* Shipper Information Section */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Shipper Information</h2>
             
-            <FormField
-              control={form.control}
-              name="originalFreightBill"
-              render={({ field }) => (
-                <div className="flex items-start">
-                  <FormControl>
-                    <Checkbox
-                      id="freight-bill"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      className="mr-2 mt-1"
-                    />
-                  </FormControl>
-                  <label htmlFor="freight-bill" className="text-sm cursor-pointer">
-                    Original paid freight bill or other carrier document bearing notation of shortage or damage
-                    <br />
-                    <span className="text-xs ml-4">if not shown on freight bill *</span>
-                  </label>
-                </div>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Shipper Name */}
+              <div className="space-y-2">
+                <Label htmlFor="shipperName" className={cn(
+                  isMissing("shipperName") && "text-red-500 font-medium"
+                )}>
+                  Shipper Name {isMissing("shipperName") && "*"}
+                </Label>
+                <Input
+                  id="shipperName"
+                  {...form.register("shipperName")}
+                  className={cn(
+                    isMissing("shipperName") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.shipperName && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.shipperName.message}</p>
+                )}
+              </div>
+              
+              {/* Shipper Address */}
+              <div className="space-y-2">
+                <Label htmlFor="shipperAddress" className={cn(
+                  isMissing("shipperAddress") && "text-red-500 font-medium"
+                )}>
+                  Shipper Address {isMissing("shipperAddress") && "*"}
+                </Label>
+                <Input
+                  id="shipperAddress"
+                  {...form.register("shipperAddress")}
+                  className={cn(
+                    isMissing("shipperAddress") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.shipperAddress && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.shipperAddress.message}</p>
+                )}
+              </div>
+              
+              {/* Shipper Phone */}
+              <div className="space-y-2">
+                <Label htmlFor="shipperPhone" className={cn(
+                  isMissing("shipperPhone") && "text-red-500 font-medium"
+                )}>
+                  Shipper Phone {isMissing("shipperPhone") && "*"}
+                </Label>
+                <Input
+                  id="shipperPhone"
+                  {...form.register("shipperPhone")}
+                  className={cn(
+                    isMissing("shipperPhone") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.shipperPhone && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.shipperPhone.message}</p>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Consignee Information Section */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Consignee Information</h2>
             
-            <FormField
-              control={form.control}
-              name="originalInvoice"
-              render={({ field }) => (
-                <div className="flex items-center">
-                  <FormControl>
-                    <Checkbox
-                      id="invoice"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      className="mr-2"
-                    />
-                  </FormControl>
-                  <label htmlFor="invoice" className="text-sm cursor-pointer">
-                    Original invoice or certified copy as billed by seller *
-                  </label>
-                </div>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Consignee Name */}
+              <div className="space-y-2">
+                <Label htmlFor="consigneeName" className={cn(
+                  isMissing("consigneeName") && "text-red-500 font-medium"
+                )}>
+                  Consignee Name {isMissing("consigneeName") && "*"}
+                </Label>
+                <Input
+                  id="consigneeName"
+                  {...form.register("consigneeName")}
+                  className={cn(
+                    isMissing("consigneeName") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.consigneeName && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.consigneeName.message}</p>
+                )}
+              </div>
+              
+              {/* Consignee Address */}
+              <div className="space-y-2">
+                <Label htmlFor="consigneeAddress" className={cn(
+                  isMissing("consigneeAddress") && "text-red-500 font-medium"
+                )}>
+                  Consignee Address {isMissing("consigneeAddress") && "*"}
+                </Label>
+                <Input
+                  id="consigneeAddress"
+                  {...form.register("consigneeAddress")}
+                  className={cn(
+                    isMissing("consigneeAddress") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.consigneeAddress && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.consigneeAddress.message}</p>
+                )}
+              </div>
+              
+              {/* Consignee Phone */}
+              <div className="space-y-2">
+                <Label htmlFor="consigneePhone" className={cn(
+                  isMissing("consigneePhone") && "text-red-500 font-medium"
+                )}>
+                  Consignee Phone {isMissing("consigneePhone") && "*"}
+                </Label>
+                <Input
+                  id="consigneePhone"
+                  {...form.register("consigneePhone")}
+                  className={cn(
+                    isMissing("consigneePhone") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.consigneePhone && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.consigneePhone.message}</p>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Detailed Statement Section */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Detailed Statement</h2>
             
-            {claimTypeValue === "Damage" && (
-              <div className="flex items-center pt-2">
-                <span className="text-sm mr-2">Is merchandise repairable?</span>
-                <div className="flex items-center space-x-2">
-                  <FormField
-                    control={form.control}
-                    name="merchandiseRepairable"
-                    render={({ field }) => (
-                      <div className="flex items-center space-x-8">
-                        <div className="flex items-center">
-                          <FormControl>
-                            <Checkbox
-                              id="repairable-yes"
-                              checked={field.value === "Yes"}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  field.onChange("Yes");
-                                  setIsRepairable(true);
-                                }
-                              }}
-                              className="mr-1"
-                            />
-                          </FormControl>
-                          <label htmlFor="repairable-yes" className="text-sm cursor-pointer">
-                            Yes
-                          </label>
-                        </div>
-                        
-                        <div className="flex items-center">
-                          <FormControl>
-                            <Checkbox
-                              id="repairable-no"
-                              checked={field.value === "No"}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  field.onChange("No");
-                                  setIsRepairable(false);
-                                }
-                              }}
-                              className="mr-1"
-                            />
-                          </FormControl>
-                          <label htmlFor="repairable-no" className="text-sm cursor-pointer">
-                            No
-                          </label>
-                        </div>
-                        
-                        {isRepairable && (
-                          <div className="flex items-center">
-                            <span className="text-sm">Estimated cost to repair</span>
-                            <FormField
-                              control={form.control}
-                              name="repairCost"
-                              render={({ field }) => (
-                                <FormControl>
-                                  <Input
-                                    placeholder="$0.00"
-                                    className="w-24 h-8 ml-2"
-                                    {...field}
-                                  />
-                                </FormControl>
-                              )}
-                            />
-                          </div>
-                        )}
-                      </div>
+            <div className="space-y-4">
+              {/* Claim Description */}
+              <div className="space-y-2">
+                <Label htmlFor="claimDescription" className={cn(
+                  isMissing("claimDescription") && "text-red-500 font-medium"
+                )}>
+                  Detailed Statement of Claim {isMissing("claimDescription") && "*"}
+                </Label>
+                <Textarea
+                  id="claimDescription"
+                  rows={5}
+                  {...form.register("claimDescription")}
+                  className={cn(
+                    isMissing("claimDescription") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.claimDescription && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.claimDescription.message}</p>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Supporting Documents */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">The Following Documents Are Submitted In Support Of This Claim</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="originalBillOfLading" 
+                  checked={form.watch("originalBillOfLading") as boolean}
+                  onCheckedChange={(checked) => 
+                    form.setValue("originalBillOfLading", checked as boolean)
+                  }
+                />
+                <Label htmlFor="originalBillOfLading" className="font-normal">
+                  Original Bill of Lading
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="originalFreightBill" 
+                  checked={form.watch("originalFreightBill") as boolean}
+                  onCheckedChange={(checked) => 
+                    form.setValue("originalFreightBill", checked as boolean)
+                  }
+                />
+                <Label htmlFor="originalFreightBill" className="font-normal">
+                  Original Freight Bill
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="originalInvoice" 
+                  checked={form.watch("originalInvoice") as boolean}
+                  onCheckedChange={(checked) => 
+                    form.setValue("originalInvoice", checked as boolean)
+                  }
+                />
+                <Label htmlFor="originalInvoice" className="font-normal">
+                  Original Invoice
+                </Label>
+              </div>
+            </div>
+          </div>
+          
+          {/* Is Merchandise Repairable */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Additional Information</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="isRepairable" className={cn(
+                  isMissing("isRepairable") && "text-red-500 font-medium"
+                )}>
+                  Is Merchandise Repairable? {isMissing("isRepairable") && "*"}
+                </Label>
+                <Select 
+                  onValueChange={(value) => form.setValue("isRepairable", value)} 
+                  defaultValue={form.getValues("isRepairable")}
+                >
+                  <SelectTrigger className={cn(
+                    isMissing("isRepairable") && "border-red-500 focus-visible:ring-red-500"
+                  )}>
+                    <SelectValue placeholder="Select option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Yes">Yes</SelectItem>
+                    <SelectItem value="No">No</SelectItem>
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.isRepairable && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.isRepairable.message}</p>
+                )}
+              </div>
+              
+              {form.watch("isRepairable") === "Yes" && (
+                <div className="space-y-2">
+                  <Label htmlFor="repairCost" className={cn(
+                    isMissing("repairCost") && "text-red-500 font-medium"
+                  )}>
+                    Repair Cost ($) {isMissing("repairCost") && "*"}
+                  </Label>
+                  <Input
+                    id="repairCost"
+                    {...form.register("repairCost")}
+                    className={cn(
+                      isMissing("repairCost") && "border-red-500 focus-visible:ring-red-500"
                     )}
                   />
+                  {form.formState.errors.repairCost && (
+                    <p className="text-red-500 text-sm">{form.formState.errors.repairCost.message}</p>
+                  )}
                 </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Claimant Information */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Claimant Information</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="companyName" className={cn(
+                  isMissing("companyName") && "text-red-500 font-medium"
+                )}>
+                  Company Name {isMissing("companyName") && "*"}
+                </Label>
+                <Input
+                  id="companyName"
+                  {...form.register("companyName")}
+                  className={cn(
+                    isMissing("companyName") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.companyName && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.companyName.message}</p>
+                )}
               </div>
-            )}
+              
+              <div className="space-y-2">
+                <Label htmlFor="address" className={cn(
+                  isMissing("address") && "text-red-500 font-medium"
+                )}>
+                  Address {isMissing("address") && "*"}
+                </Label>
+                <Input
+                  id="address"
+                  {...form.register("address")}
+                  className={cn(
+                    isMissing("address") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.address && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.address.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="contactPerson" className={cn(
+                  isMissing("contactPerson") && "text-red-500 font-medium"
+                )}>
+                  Contact Person {isMissing("contactPerson") && "*"}
+                </Label>
+                <Input
+                  id="contactPerson"
+                  {...form.register("contactPerson")}
+                  className={cn(
+                    isMissing("contactPerson") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.contactPerson && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.contactPerson.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email" className={cn(
+                  isMissing("email") && "text-red-500 font-medium"
+                )}>
+                  Email {isMissing("email") && "*"}
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  {...form.register("email")}
+                  className={cn(
+                    isMissing("email") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.email && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.email.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="phone" className={cn(
+                  isMissing("phone") && "text-red-500 font-medium"
+                )}>
+                  Phone {isMissing("phone") && "*"}
+                </Label>
+                <Input
+                  id="phone"
+                  {...form.register("phone")}
+                  className={cn(
+                    isMissing("phone") && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.phone && (
+                  <p className="text-red-500 text-sm">{form.formState.errors.phone.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="fax">
+                  Fax (Optional)
+                </Label>
+                <Input
+                  id="fax"
+                  {...form.register("fax")}
+                  placeholder="Fax number"
+                />
+              </div>
+            </div>
           </div>
           
-          <div className="mt-4 text-sm italic">
-            <p>Note: Please retain salvage until claim has been resolved.</p>
-          </div>
-          
-          <div className="mt-4 p-4 border rounded-md bg-blue-50">
+          {/* Verification Statement */}
+          <div className="space-y-4 p-4 border rounded-md bg-gray-50">
             <p className="text-sm">
-              <span className="font-bold">Upload Documents: </span>
-              Use the document upload feature to attach digital copies of supporting documents.
+              I certify that the foregoing statement of facts is true and correct, and acknowledge that the submission of a fraudulent claim may subject the claimant to legal action.
             </p>
-          </div>
-        </div>
-        
-
-        
-        {/* Verification Statement */}
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <p className="text-center font-bold text-base uppercase mb-4">
-            THE FOREGOING STATEMENT OF FACTS IS HEREBY CERTIFIED AS CORRECT
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-1 flex justify-center items-center">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  // Would typically print the form in a real app
-                  window.alert("Print functionality would be implemented here.");
-                }}
-                className="bg-green-700 text-white hover:bg-green-800 hover:text-white w-full py-6"
-              >
-                Print
-              </Button>
+            
+            <div className="space-y-2">
+              <Label htmlFor="signature" className={cn(
+                isMissing("signature") && "text-red-500 font-medium"
+              )}>
+                Authorized Signature {isMissing("signature") && "*"}
+              </Label>
+              <Input
+                id="signature"
+                {...form.register("signature")}
+                className={cn(
+                  isMissing("signature") && "border-red-500 focus-visible:ring-red-500"
+                )}
+                placeholder="Type full name to sign"
+              />
+              {form.formState.errors.signature && (
+                <p className="text-red-500 text-sm">{form.formState.errors.signature.message}</p>
+              )}
             </div>
             
-            <div className="md:col-span-2 space-y-4">
-              <FormField
-                control={form.control}
-                name="companyName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium">Your Company Name:</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter company name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="companyAddress"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium">Address:</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Enter company address" 
-                        className="resize-none min-h-[60px]" 
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="contactPerson"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium">Contact Person:</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter contact name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="emailAddress"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium">Email Address:</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="Enter email address" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">Phone:</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter phone number" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="fax"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">Fax#</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter fax number (if available)" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+            <div className="flex justify-end">
+              <Button type="button" variant="outline" className="text-sm">
+                Print Form
+              </Button>
             </div>
           </div>
           
-          <div className="mt-4 text-right text-xs text-gray-500">
-            3-Dec
+          {/* Form Footer */}
+          <div className="flex justify-between">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Submitting..." : "Submit Claim"}
+            </Button>
           </div>
         </div>
-        
-        {/* Signature - Hidden for electronic submission */}
-        <div className="hidden">
-          <FormField
-            control={form.control}
-            name="signature"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <Input 
-                    type="hidden" 
-                    {...field} 
-                    value={field.value || form.watch('contactPerson')} 
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-        </div>
-        
-        {/* Submit and Cancel Buttons */}
-        <div className="flex justify-end space-x-4">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={onCancel}
-            disabled={isLoading}
-          >
-            Cancel
-          </Button>
-          <Button 
-            type="submit"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <span className="mr-2">Processing...</span>
-                <div className="h-4 w-4 animate-spin rounded-full border-t-2 border-white" />
-              </>
-            ) : 'Submit Claim'}
-          </Button>
-        </div>
       </form>
-    </Form>
+    </div>
   );
 }
