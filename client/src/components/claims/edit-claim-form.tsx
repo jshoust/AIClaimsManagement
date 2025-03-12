@@ -26,11 +26,10 @@ export default function EditClaimForm({ claim, onClose }: EditClaimFormProps) {
     const fetchClaimData = async () => {
       try {
         if (claim?.id) {
-          const response = await apiRequest('GET', `/api/claims/${claim.id}`);
-          if (response) {
-            const claimData = await response.json();
-            setClaimData(claimData);
-            console.log("Fetched claim data:", claimData);
+          const data = await apiRequest<Claim>('GET', `/api/claims/${claim.id}`);
+          if (data) {
+            setClaimData(data);
+            console.log("Fetched claim data:", data);
           }
         }
       } catch (error) {
