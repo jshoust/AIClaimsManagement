@@ -19,6 +19,22 @@ export interface DocumentAnalysisResult {
     claimAmount?: string;
     claimType?: string;
     description?: string;
+    // Address information
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    country?: string;
+    // Product information
+    purchaseDate?: string;
+    productName?: string;
+    productSku?: string;
+    productQuantity?: string;
+    // Additional claim details
+    damageDescription?: string;
+    preferredResolution?: string;
+    dateOfIncident?: string;
     [key: string]: string | undefined;
   };
   summary: string;
@@ -51,7 +67,23 @@ export async function analyzeDocument(text: string): Promise<DocumentAnalysisRes
         "orderNumber": "string",
         "claimAmount": "string",
         "claimType": "string",
-        "description": "string"
+        "description": "string",
+        
+        "addressLine1": "string",
+        "addressLine2": "string",
+        "city": "string",
+        "state": "string",
+        "zipCode": "string",
+        "country": "string",
+        
+        "purchaseDate": "string",
+        "productName": "string",
+        "productSku": "string",
+        "productQuantity": "string",
+        
+        "damageDescription": "string",
+        "preferredResolution": "string",
+        "dateOfIncident": "string"
       },
       "summary": "string summary of the claim"
     }
@@ -148,14 +180,19 @@ export async function analyzeImageDocument(imageBase64: string): Promise<Documen
     3. Provide a brief summary of the claim.
     
     The important fields to check for are:
-    - Customer name
+    - Customer/Company name
     - Contact person
     - Email address
     - Phone number
+    - Address (Line 1, Line 2, City, State, Zip, Country)
     - Order number
+    - Purchase date
+    - Product details (Name, SKU, Quantity)
     - Claim amount
     - Claim type
-    - Description of the claim
+    - Description of the claim/damage
+    - Preferred resolution
+    - Date of incident
     
     Consider any empty or incomplete field as missing information.
     
@@ -170,7 +207,23 @@ export async function analyzeImageDocument(imageBase64: string): Promise<Documen
         "orderNumber": "string",
         "claimAmount": "string",
         "claimType": "string",
-        "description": "string"
+        "description": "string",
+        
+        "addressLine1": "string",
+        "addressLine2": "string",
+        "city": "string",
+        "state": "string",
+        "zipCode": "string",
+        "country": "string",
+        
+        "purchaseDate": "string",
+        "productName": "string",
+        "productSku": "string",
+        "productQuantity": "string",
+        
+        "damageDescription": "string",
+        "preferredResolution": "string",
+        "dateOfIncident": "string"
       },
       "summary": "string summary of the claim"
     }

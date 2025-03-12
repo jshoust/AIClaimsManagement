@@ -22,16 +22,31 @@ export default function EditClaimForm({ claim, onClose }: EditClaimFormProps) {
   
   // Form state
   const [formData, setFormData] = useState({
-    customerName: claim.customerName,
-    contactPerson: claim.contactPerson,
-    email: claim.email,
-    phone: claim.phone,
-    orderNumber: claim.orderNumber,
-    claimAmount: claim.claimAmount,
-    claimType: claim.claimType,
-    description: claim.description,
+    customerName: claim.customerName || "",
+    contactPerson: claim.contactPerson || "",
+    email: claim.email || "",
+    phone: claim.phone || "",
+    orderNumber: claim.orderNumber || "",
+    claimAmount: claim.claimAmount || "",
+    claimType: claim.claimType || "",
+    description: claim.description || "",
     status: claim.status,
     assignedTo: claim.assignedTo || "",
+    addressLine1: claim.addressLine1 || "",
+    addressLine2: claim.addressLine2 || "",
+    city: claim.city || "",
+    state: claim.state || "",
+    zipCode: claim.zipCode || "",
+    country: claim.country || "",
+    purchaseDate: claim.purchaseDate || "",
+    productName: claim.productName || "",
+    productSku: claim.productSku || "",
+    productQuantity: claim.productQuantity || "",
+    damageDescription: claim.damageDescription || "",
+    preferredResolution: claim.preferredResolution || "",
+    attachments: claim.attachments || "",
+    signature: claim.signature || "",
+    dateOfIncident: claim.dateOfIncident || ""
   });
   
   // Is the form in edit mode or view mode
@@ -40,16 +55,31 @@ export default function EditClaimForm({ claim, onClose }: EditClaimFormProps) {
   // Update form state when selected claim changes
   useEffect(() => {
     setFormData({
-      customerName: claim.customerName,
-      contactPerson: claim.contactPerson,
-      email: claim.email,
-      phone: claim.phone,
-      orderNumber: claim.orderNumber,
-      claimAmount: claim.claimAmount,
-      claimType: claim.claimType,
-      description: claim.description,
+      customerName: claim.customerName || "",
+      contactPerson: claim.contactPerson || "",
+      email: claim.email || "",
+      phone: claim.phone || "",
+      orderNumber: claim.orderNumber || "",
+      claimAmount: claim.claimAmount || "",
+      claimType: claim.claimType || "",
+      description: claim.description || "",
       status: claim.status,
       assignedTo: claim.assignedTo || "",
+      addressLine1: claim.addressLine1 || "",
+      addressLine2: claim.addressLine2 || "",
+      city: claim.city || "",
+      state: claim.state || "",
+      zipCode: claim.zipCode || "",
+      country: claim.country || "",
+      purchaseDate: claim.purchaseDate || "",
+      productName: claim.productName || "",
+      productSku: claim.productSku || "",
+      productQuantity: claim.productQuantity || "",
+      damageDescription: claim.damageDescription || "",
+      preferredResolution: claim.preferredResolution || "",
+      attachments: claim.attachments || "",
+      signature: claim.signature || "",
+      dateOfIncident: claim.dateOfIncident || ""
     });
     setIsEditing(false);
   }, [claim]);
@@ -92,7 +122,7 @@ export default function EditClaimForm({ claim, onClose }: EditClaimFormProps) {
         claimId: claim.id,
         type: 'update',
         description: 'Claim information updated',
-        createdBy: 'John Doe',
+        createdBy: 'System',
       });
       
       queryClient.invalidateQueries({ queryKey: ['/api/activities'] });
@@ -114,15 +144,42 @@ export default function EditClaimForm({ claim, onClose }: EditClaimFormProps) {
     let resolved = 0;
     
     missingFields.forEach(field => {
-      const fieldName = field.toLowerCase().replace(/\s+/g, '');
+      // Convert field names to match form data properties
+      let fieldName = field.toLowerCase().replace(/\s+/g, '');
+      
+      // Handle special cases for field name mapping
+      if (field.includes("Address")) fieldName = "addressLine1";
+      if (field.includes("Purchase Date")) fieldName = "purchaseDate";
+      if (field.includes("Product Name")) fieldName = "productName";
+      if (field.includes("Damage Description")) fieldName = "damageDescription";
+      if (field.includes("Preferred Resolution")) fieldName = "preferredResolution";
+      if (field.includes("Incident Date")) fieldName = "dateOfIncident";
+      
       // Check if the field is no longer empty in the form data
       if (formData[fieldName as keyof typeof formData] && 
-          formData[fieldName as keyof typeof formData] !== claim[fieldName as keyof typeof claim]) {
+          (!claim[fieldName as keyof typeof claim] || 
+           formData[fieldName as keyof typeof formData] !== claim[fieldName as keyof typeof claim])) {
         resolved++;
       }
     });
     
     return resolved;
+  };
+  
+  // Helper to check if field is missing
+  const isFieldMissing = (fieldName: string): boolean => {
+    if (!claim.missingInformation) return false;
+    
+    const missingArray = claim.missingInformation as string[];
+    return missingArray.some(item => 
+      item.toLowerCase().includes(fieldName.toLowerCase()) || 
+      (fieldName === "addressLine1" && item.toLowerCase().includes("address")) ||
+      (fieldName === "purchaseDate" && item.toLowerCase().includes("purchase date")) ||
+      (fieldName === "productName" && item.toLowerCase().includes("product name")) ||
+      (fieldName === "damageDescription" && item.toLowerCase().includes("damage description")) ||
+      (fieldName === "preferredResolution" && item.toLowerCase().includes("preferred resolution")) ||
+      (fieldName === "dateOfIncident" && item.toLowerCase().includes("incident date"))
+    );
   };
   
   return (
@@ -154,53 +211,157 @@ export default function EditClaimForm({ claim, onClose }: EditClaimFormProps) {
         </div>
       </div>
       
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border border-neutral-200 p-6">
+        <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
+          <p className="text-sm text-green-800">
+            <span className="font-bold">Claim Form</span>: Fill in all required fields marked with a red border. Fields with data already extracted from the PDF are pre-filled.
+          </p>
+        </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* SECTION 1: Claimant Information */}
           <div className="space-y-4">
-            <h3 className="text-sm font-medium text-neutral-500 uppercase">Customer Information</h3>
+            <h3 className="text-sm font-medium text-neutral-500 uppercase border-b pb-2">Claimant Information</h3>
             
+            {/* Customer Name Field */}
             <div>
-              <Label htmlFor="customerName">Customer Name</Label>
+              <Label htmlFor="customerName" className="flex justify-between">
+                <span>Company/Customer Name</span>
+                {isFieldMissing('customerName') && <span className="text-red-500">*Required</span>}
+              </Label>
               <Input
                 id="customerName"
                 name="customerName"
                 value={formData.customerName}
                 onChange={handleChange}
                 disabled={!isEditing}
-                className={claim.missingInformation && (claim.missingInformation as string[]).includes('Customer Name') 
-                  ? 'border-orange-500' 
-                  : ''}
+                className={isFieldMissing('customerName') ? 'border-red-500' : ''}
+                placeholder="Enter company or customer name"
               />
-              {claim.missingInformation && (claim.missingInformation as string[]).includes('Customer Name') && (
-                <p className="text-xs text-orange-500 mt-1 flex items-center">
-                  <span className="material-icons text-xs mr-1">warning</span>
-                  Required information missing
-                </p>
-              )}
             </div>
             
+            {/* Contact Person Field */}
             <div>
-              <Label htmlFor="contactPerson">Contact Person</Label>
+              <Label htmlFor="contactPerson" className="flex justify-between">
+                <span>Contact Person</span>
+                {isFieldMissing('contactPerson') && <span className="text-red-500">*Required</span>}
+              </Label>
               <Input
                 id="contactPerson"
                 name="contactPerson"
                 value={formData.contactPerson}
                 onChange={handleChange}
                 disabled={!isEditing}
-                className={claim.missingInformation && (claim.missingInformation as string[]).includes('Contact Person') 
-                  ? 'border-orange-500' 
-                  : ''}
+                className={isFieldMissing('contactPerson') ? 'border-red-500' : ''}
+                placeholder="Enter primary contact name"
               />
-              {claim.missingInformation && (claim.missingInformation as string[]).includes('Contact Person') && (
-                <p className="text-xs text-orange-500 mt-1 flex items-center">
-                  <span className="material-icons text-xs mr-1">warning</span>
-                  Required information missing
-                </p>
-              )}
             </div>
             
+            {/* Address Line 1 Field */}
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="addressLine1" className="flex justify-between">
+                <span>Address Line 1</span>
+                {isFieldMissing('addressLine1') && <span className="text-red-500">*Required</span>}
+              </Label>
+              <Input
+                id="addressLine1"
+                name="addressLine1"
+                value={formData.addressLine1}
+                onChange={handleChange}
+                disabled={!isEditing}
+                className={isFieldMissing('addressLine1') ? 'border-red-500' : ''}
+                placeholder="Street address"
+              />
+            </div>
+            
+            {/* Address Line 2 Field */}
+            <div>
+              <Label htmlFor="addressLine2">
+                <span>Address Line 2</span> <span className="text-neutral-400">(Optional)</span>
+              </Label>
+              <Input
+                id="addressLine2"
+                name="addressLine2"
+                value={formData.addressLine2}
+                onChange={handleChange}
+                disabled={!isEditing}
+                placeholder="Apt, Suite, Building (optional)"
+              />
+            </div>
+            
+            {/* City, State, Zip Fields */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="city" className="flex justify-between">
+                  <span>City</span>
+                  {isFieldMissing('city') && <span className="text-red-500">*Required</span>}
+                </Label>
+                <Input
+                  id="city"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  className={isFieldMissing('city') ? 'border-red-500' : ''}
+                  placeholder="City"
+                />
+              </div>
+              <div>
+                <Label htmlFor="state" className="flex justify-between">
+                  <span>State</span>
+                  {isFieldMissing('state') && <span className="text-red-500">*Required</span>}
+                </Label>
+                <Input
+                  id="state"
+                  name="state"
+                  value={formData.state}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  className={isFieldMissing('state') ? 'border-red-500' : ''}
+                  placeholder="State/Province"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="zipCode" className="flex justify-between">
+                  <span>Zip/Postal Code</span>
+                  {isFieldMissing('zipCode') && <span className="text-red-500">*Required</span>}
+                </Label>
+                <Input
+                  id="zipCode"
+                  name="zipCode"
+                  value={formData.zipCode}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  className={isFieldMissing('zipCode') ? 'border-red-500' : ''}
+                  placeholder="Zip/Postal code"
+                />
+              </div>
+              <div>
+                <Label htmlFor="country" className="flex justify-between">
+                  <span>Country</span>
+                  {isFieldMissing('country') && <span className="text-red-500">*Required</span>}
+                </Label>
+                <Input
+                  id="country"
+                  name="country"
+                  value={formData.country}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  className={isFieldMissing('country') ? 'border-red-500' : ''}
+                  placeholder="Country"
+                />
+              </div>
+            </div>
+            
+            {/* Contact Information */}
+            <div>
+              <Label htmlFor="email" className="flex justify-between">
+                <span>Email Address</span>
+                {isFieldMissing('email') && <span className="text-red-500">*Required</span>}
+              </Label>
               <Input
                 id="email"
                 name="email"
@@ -208,90 +369,141 @@ export default function EditClaimForm({ claim, onClose }: EditClaimFormProps) {
                 value={formData.email}
                 onChange={handleChange}
                 disabled={!isEditing}
-                className={claim.missingInformation && (claim.missingInformation as string[]).includes('Email') 
-                  ? 'border-orange-500' 
-                  : ''}
+                className={isFieldMissing('email') ? 'border-red-500' : ''}
+                placeholder="example@company.com"
               />
-              {claim.missingInformation && (claim.missingInformation as string[]).includes('Email') && (
-                <p className="text-xs text-orange-500 mt-1 flex items-center">
-                  <span className="material-icons text-xs mr-1">warning</span>
-                  Required information missing
-                </p>
-              )}
             </div>
             
             <div>
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="phone" className="flex justify-between">
+                <span>Phone Number</span>
+                {isFieldMissing('phone') && <span className="text-red-500">*Required</span>}
+              </Label>
               <Input
                 id="phone"
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
                 disabled={!isEditing}
-                className={claim.missingInformation && (claim.missingInformation as string[]).includes('Phone') 
-                  ? 'border-orange-500' 
-                  : ''}
+                className={isFieldMissing('phone') ? 'border-red-500' : ''}
+                placeholder="Phone number with area code"
               />
-              {claim.missingInformation && (claim.missingInformation as string[]).includes('Phone') && (
-                <p className="text-xs text-orange-500 mt-1 flex items-center">
-                  <span className="material-icons text-xs mr-1">warning</span>
-                  Required information missing
-                </p>
-              )}
             </div>
           </div>
           
+          {/* SECTION 2: Order & Product Information */}
           <div className="space-y-4">
-            <h3 className="text-sm font-medium text-neutral-500 uppercase">Claim Details</h3>
+            <h3 className="text-sm font-medium text-neutral-500 uppercase border-b pb-2">Order & Product Information</h3>
             
             <div>
-              <Label htmlFor="orderNumber">Order Number</Label>
+              <Label htmlFor="orderNumber" className="flex justify-between">
+                <span>Order Number</span>
+                {isFieldMissing('orderNumber') && <span className="text-red-500">*Required</span>}
+              </Label>
               <Input
                 id="orderNumber"
                 name="orderNumber"
                 value={formData.orderNumber}
                 onChange={handleChange}
                 disabled={!isEditing}
-                className={claim.missingInformation && (claim.missingInformation as string[]).includes('Order Number') 
-                  ? 'border-orange-500' 
-                  : ''}
+                className={isFieldMissing('orderNumber') ? 'border-red-500' : ''}
+                placeholder="Order Number/Invoice ID"
               />
-              {claim.missingInformation && (claim.missingInformation as string[]).includes('Order Number') && (
-                <p className="text-xs text-orange-500 mt-1 flex items-center">
-                  <span className="material-icons text-xs mr-1">warning</span>
-                  Required information missing
-                </p>
-              )}
             </div>
             
             <div>
-              <Label htmlFor="claimAmount">Claim Amount</Label>
+              <Label htmlFor="purchaseDate" className="flex justify-between">
+                <span>Purchase Date</span>
+                {isFieldMissing('purchaseDate') && <span className="text-red-500">*Required</span>}
+              </Label>
+              <Input
+                id="purchaseDate"
+                name="purchaseDate"
+                type="date"
+                value={formData.purchaseDate}
+                onChange={handleChange}
+                disabled={!isEditing}
+                className={isFieldMissing('purchaseDate') ? 'border-red-500' : ''}
+                placeholder="MM/DD/YYYY"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="productName" className="flex justify-between">
+                <span>Product Name/Model</span>
+                {isFieldMissing('productName') && <span className="text-red-500">*Required</span>}
+              </Label>
+              <Input
+                id="productName"
+                name="productName"
+                value={formData.productName}
+                onChange={handleChange}
+                disabled={!isEditing}
+                className={isFieldMissing('productName') ? 'border-red-500' : ''}
+                placeholder="Product name or model"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="productSku" className="flex justify-between">
+                  <span>Product SKU</span>
+                  {isFieldMissing('productSku') && <span className="text-red-500">*Required</span>}
+                </Label>
+                <Input
+                  id="productSku"
+                  name="productSku"
+                  value={formData.productSku}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  className={isFieldMissing('productSku') ? 'border-red-500' : ''}
+                  placeholder="Product SKU/ID"
+                />
+              </div>
+              <div>
+                <Label htmlFor="productQuantity" className="flex justify-between">
+                  <span>Quantity</span>
+                  {isFieldMissing('productQuantity') && <span className="text-red-500">*Required</span>}
+                </Label>
+                <Input
+                  id="productQuantity"
+                  name="productQuantity"
+                  value={formData.productQuantity}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  className={isFieldMissing('productQuantity') ? 'border-red-500' : ''}
+                  placeholder="Quantity"
+                />
+              </div>
+            </div>
+              
+            <div>
+              <Label htmlFor="claimAmount" className="flex justify-between">
+                <span>Claim Amount ($)</span>
+                {isFieldMissing('claimAmount') && <span className="text-red-500">*Required</span>}
+              </Label>
               <Input
                 id="claimAmount"
                 name="claimAmount"
                 value={formData.claimAmount}
                 onChange={handleChange}
                 disabled={!isEditing}
-                className={claim.missingInformation && (claim.missingInformation as string[]).includes('Claim Amount') 
-                  ? 'border-orange-500' 
-                  : ''}
+                className={isFieldMissing('claimAmount') ? 'border-red-500' : ''}
+                placeholder="Dollar amount of claim"
               />
-              {claim.missingInformation && (claim.missingInformation as string[]).includes('Claim Amount') && (
-                <p className="text-xs text-orange-500 mt-1 flex items-center">
-                  <span className="material-icons text-xs mr-1">warning</span>
-                  Required information missing
-                </p>
-              )}
             </div>
             
             <div>
-              <Label htmlFor="claimType">Claim Type</Label>
+              <Label htmlFor="claimType" className="flex justify-between">
+                <span>Claim Type</span>
+                {isFieldMissing('claimType') && <span className="text-red-500">*Required</span>}
+              </Label>
               {isEditing ? (
                 <Select 
                   value={formData.claimType} 
                   onValueChange={(value) => handleSelectChange('claimType', value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={isFieldMissing('claimType') ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Select claim type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -309,69 +521,150 @@ export default function EditClaimForm({ claim, onClose }: EditClaimFormProps) {
                   name="claimType"
                   value={formData.claimType}
                   disabled
-                  className={claim.missingInformation && (claim.missingInformation as string[]).includes('Claim Type') 
-                    ? 'border-orange-500' 
-                    : ''}
+                  className={isFieldMissing('claimType') ? 'border-red-500' : ''}
+                  placeholder="Claim type (empty)"
                 />
-              )}
-              {claim.missingInformation && (claim.missingInformation as string[]).includes('Claim Type') && (
-                <p className="text-xs text-orange-500 mt-1 flex items-center">
-                  <span className="material-icons text-xs mr-1">warning</span>
-                  Required information missing
-                </p>
               )}
             </div>
             
             <div>
-              <Label htmlFor="status">Status</Label>
-              {isEditing ? (
-                <Select 
-                  value={formData.status} 
-                  onValueChange={(value) => handleSelectChange('status', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ClaimStatus.NEW}>New</SelectItem>
-                    <SelectItem value={ClaimStatus.MISSING_INFO}>Missing Information</SelectItem>
-                    <SelectItem value={ClaimStatus.IN_REVIEW}>In Review</SelectItem>
-                    <SelectItem value={ClaimStatus.FOLLOW_UP}>Follow Up</SelectItem>
-                    <SelectItem value={ClaimStatus.COMPLETED}>Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <div className="mt-1">
-                  <StatusBadge status={formData.status as any} />
-                </div>
-              )}
+              <Label htmlFor="dateOfIncident" className="flex justify-between">
+                <span>Date of Incident</span>
+                {isFieldMissing('dateOfIncident') && <span className="text-red-500">*Required</span>}
+              </Label>
+              <Input
+                id="dateOfIncident"
+                name="dateOfIncident"
+                type="date"
+                value={formData.dateOfIncident}
+                onChange={handleChange}
+                disabled={!isEditing}
+                className={isFieldMissing('dateOfIncident') ? 'border-red-500' : ''}
+                placeholder="MM/DD/YYYY"
+              />
             </div>
           </div>
         </div>
         
-        <div>
-          <Label htmlFor="description">Description</Label>
-          <Textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            disabled={!isEditing}
-            rows={5}
-            className={claim.missingInformation && (claim.missingInformation as string[]).includes('Description') 
-              ? 'border-orange-500' 
-              : ''}
-          />
-          {claim.missingInformation && (claim.missingInformation as string[]).includes('Description') && (
-            <p className="text-xs text-orange-500 mt-1 flex items-center">
-              <span className="material-icons text-xs mr-1">warning</span>
-              Required information missing
-            </p>
-          )}
+        {/* SECTION 3: Claim Details & Description */}
+        <div className="mt-6 space-y-4">
+          <h3 className="text-sm font-medium text-neutral-500 uppercase border-b pb-2">Claim Details</h3>
+          
+          <div>
+            <Label htmlFor="damageDescription" className="flex justify-between">
+              <span>Damage/Issue Description</span>
+              {isFieldMissing('damageDescription') && <span className="text-red-500">*Required</span>}
+            </Label>
+            <Textarea
+              id="damageDescription"
+              name="damageDescription"
+              value={formData.damageDescription}
+              onChange={handleChange}
+              disabled={!isEditing}
+              rows={3}
+              className={isFieldMissing('damageDescription') ? 'border-red-500' : ''}
+              placeholder="Detailed description of the damage or issue"
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="description" className="flex justify-between">
+              <span>Additional Notes</span>
+              {isFieldMissing('description') && <span className="text-red-500">*Required</span>}
+            </Label>
+            <Textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              disabled={!isEditing}
+              rows={3}
+              className={isFieldMissing('description') ? 'border-red-500' : ''}
+              placeholder="Any additional information or notes"
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="preferredResolution" className="flex justify-between">
+              <span>Preferred Resolution</span>
+              {isFieldMissing('preferredResolution') && <span className="text-red-500">*Required</span>}
+            </Label>
+            {isEditing ? (
+              <Select 
+                value={formData.preferredResolution} 
+                onValueChange={(value) => handleSelectChange('preferredResolution', value)}
+              >
+                <SelectTrigger className={isFieldMissing('preferredResolution') ? 'border-red-500' : ''}>
+                  <SelectValue placeholder="Select preferred resolution" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Refund">Refund</SelectItem>
+                  <SelectItem value="Replacement">Replacement</SelectItem>
+                  <SelectItem value="Credit">Store Credit</SelectItem>
+                  <SelectItem value="Repair">Repair</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                id="preferredResolution"
+                name="preferredResolution"
+                value={formData.preferredResolution}
+                disabled
+                className={isFieldMissing('preferredResolution') ? 'border-red-500' : ''}
+                placeholder="Preferred resolution (empty)"
+              />
+            )}
+          </div>
+          
+          {/* Attachments Section */}
+          <div>
+            <Label htmlFor="attachments" className="flex justify-between">
+              <span>Attached Documents</span>
+              <span className="text-neutral-400">(System Managed)</span>
+            </Label>
+            <Input
+              id="attachments"
+              name="attachments"
+              value={formData.attachments || "Documents attached to this claim will appear here"}
+              disabled
+              className="bg-neutral-50"
+            />
+          </div>
+          
+          {/* Claim Status (Admin Only) */}
+          <div>
+            <Label htmlFor="status" className="flex justify-between">
+              <span>Claim Status</span>
+              <span className="text-neutral-400">(Admin Only)</span>
+            </Label>
+            {isEditing ? (
+              <Select 
+                value={formData.status} 
+                onValueChange={(value) => handleSelectChange('status', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ClaimStatus.NEW}>New</SelectItem>
+                  <SelectItem value={ClaimStatus.MISSING_INFO}>Missing Information</SelectItem>
+                  <SelectItem value={ClaimStatus.IN_REVIEW}>In Review</SelectItem>
+                  <SelectItem value={ClaimStatus.FOLLOW_UP}>Follow Up</SelectItem>
+                  <SelectItem value={ClaimStatus.COMPLETED}>Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="mt-1">
+                <StatusBadge status={formData.status as any} />
+              </div>
+            )}
+          </div>
         </div>
         
+        {/* Submission Section */}
         {isEditing && (
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 mt-8 border-t pt-4">
             <Button
               type="button"
               variant="outline"
@@ -380,12 +673,13 @@ export default function EditClaimForm({ claim, onClose }: EditClaimFormProps) {
               Cancel
             </Button>
             <Button type="submit" className="flex items-center gap-1">
-              <span className="material-icons text-sm">save</span> Save Changes
+              <span className="material-icons text-sm">save</span> Update Claim
             </Button>
           </div>
         )}
       </form>
       
+      {/* Missing Information Alert */}
       {claim.missingInformation && (claim.missingInformation as string[]).length > 0 && (
         <div className="p-4 bg-orange-50 border border-orange-200 rounded-md">
           <h3 className="text-sm font-medium text-orange-800 flex items-center">
@@ -402,22 +696,12 @@ export default function EditClaimForm({ claim, onClose }: EditClaimFormProps) {
             {(claim.missingInformation as string[]).map((item, index) => (
               <li key={index} className="text-sm text-orange-700 flex items-start">
                 <span className="material-icons text-orange-500 mr-2 text-sm">error</span>
-                <span>{item}</span>
+                {item}
               </li>
             ))}
           </ul>
         </div>
       )}
-      
-      <div className="flex justify-end gap-2 border-t pt-4">
-        <Button variant="outline" onClick={onClose}>Close</Button>
-        {claim.status === ClaimStatus.MISSING_INFO && (claim.missingInformation as string[]).length > 0 && (
-          <Button className="flex items-center gap-1">
-            <span className="material-icons text-sm">email</span>
-            Send Follow-up Email
-          </Button>
-        )}
-      </div>
     </div>
   );
 }

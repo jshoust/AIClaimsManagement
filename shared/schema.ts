@@ -36,6 +36,24 @@ export const claims = pgTable("claims", {
   dateSubmitted: timestamp("date_submitted").notNull().defaultNow(),
   assignedTo: text("assigned_to"),
   missingInformation: jsonb("missing_information").notNull().default([]),
+  // Address information
+  addressLine1: text("address_line1"),
+  addressLine2: text("address_line2"),
+  city: text("city"),
+  state: text("state"),
+  zipCode: text("zip_code"),
+  country: text("country"),
+  // Product information
+  purchaseDate: text("purchase_date"),
+  productName: text("product_name"),
+  productSku: text("product_sku"),
+  productQuantity: text("product_quantity"),
+  // Additional claim details
+  damageDescription: text("damage_description"),
+  preferredResolution: text("preferred_resolution"),
+  dateOfIncident: text("date_of_incident"),
+  attachments: text("attachments"),
+  signature: text("signature"),
 });
 
 export const insertClaimSchema = createInsertSchema(claims).omit({

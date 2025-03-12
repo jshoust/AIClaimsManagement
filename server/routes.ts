@@ -289,16 +289,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const newClaim = await storage.createClaim({
               claimNumber,
               customerName: extractedData.customerName || 'Unknown Customer',
-              contactPerson: extractedData.contactPerson || null,
-              email: extractedData.email || null,
-              phone: extractedData.phone || null,
-              orderNumber: extractedData.orderNumber || null,
-              claimAmount: extractedData.claimAmount || null,
+              contactPerson: extractedData.contactPerson || '',
+              email: extractedData.email || '',
+              phone: extractedData.phone || '',
+              orderNumber: extractedData.orderNumber || '',
+              claimAmount: extractedData.claimAmount || '',
               claimType: extractedData.claimType || 'General',
               description: extractedData.description || `Claim created from document: ${file.originalname}`,
               status: 'new',
               assignedTo: null,
-              missingInformation: analysisResult.missingInformation || []
+              missingInformation: analysisResult.missingInformation || [],
+              // Additional fields from PDF form
+              addressLine1: extractedData.addressLine1 || '',
+              addressLine2: extractedData.addressLine2 || '',
+              city: extractedData.city || '',
+              state: extractedData.state || '',
+              zipCode: extractedData.zipCode || '',
+              country: extractedData.country || '',
+              purchaseDate: extractedData.purchaseDate || '',
+              productName: extractedData.productName || '',
+              productSku: extractedData.productSku || '',
+              productQuantity: extractedData.productQuantity || '',
+              damageDescription: extractedData.damageDescription || '',
+              preferredResolution: extractedData.preferredResolution || '',
+              dateOfIncident: extractedData.dateOfIncident || '',
+              attachments: '',
+              signature: ''
             });
             
             // Update document with the new claim ID
