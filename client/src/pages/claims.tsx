@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { CreateClaimModal } from "@/components/claims/create-claim-modal";
+import { WardClaimModal } from "@/components/claims/ward-claim-modal";
 import DetailPanel from "@/components/layout/detail-panel";
 import { useQuery } from "@tanstack/react-query";
 import { Claim } from "@shared/schema";
@@ -162,8 +162,8 @@ export default function Claims({ onSelectClaim, selectedClaimId }: ClaimsProps) 
           </div>
         </div>
         
-        {/* Create Claim Modal */}
-        <CreateClaimModal 
+        {/* Create Claim Modal - Using Ward Trucking Form */}
+        <WardClaimModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
         />
