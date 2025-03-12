@@ -101,33 +101,56 @@ export default function EditClaimForm({ claim, onClose }: EditClaimFormProps) {
       {/* The new claim form component that exactly matches the PDF structure */}
       <ClaimForm
         initialData={claim ? {
-          ...claim,
-          // Ensure all required fields are present
+          id: claim.id,
+          
+          // Basic Ward form fields
           claimNumber: claim.claimNumber || "",
           wardProNumber: claim.wardProNumber || "",
-          todaysDate: claim.todaysDate || "",
+          todaysDate: new Date().toISOString().split('T')[0], // Today's date
           freightBillDate: claim.freightBillDate || "",
           claimantsRefNumber: claim.claimantsRefNumber || "",
+          
+          // Claim type and amount
           claimAmount: claim.claimAmount || "",
           claimType: claim.claimType || "damage",
+          
+          // Shipper information
           shipperName: claim.shipperName || "",
-          shipperAddress: claim.shipperAddress || "",
+          shipperAddress: claim.shipperAddress || "",  
           shipperPhone: claim.shipperPhone || "",
+          
+          // Consignee information
           consigneeName: claim.consigneeName || "",
           consigneeAddress: claim.consigneeAddress || "",
           consigneePhone: claim.consigneePhone || "",
-          claimDescription: claim.claimDescription || "",
+          
+          // Claim details
+          claimDescription: claim.claimDescription || claim.description || "",
+          
+          // Supporting documents
           originalBillOfLading: claim.originalBillOfLading || false,
           originalFreightBill: claim.originalFreightBill || false,
           originalInvoice: claim.originalInvoice || false,
+          
+          // Additional information
           isRepairable: claim.isRepairable || "",
           repairCost: claim.repairCost || "",
+          
+          // Claimant information
           companyName: claim.companyName || "",
-          address: claim.address || "",
+          address: claim.addressLine1 ? `${claim.addressLine1}${claim.addressLine2 ? ', ' + claim.addressLine2 : ''}` : "",
           contactPerson: claim.contactPerson || "",
           email: claim.email || "",
           phone: claim.phone || "",
           fax: claim.fax || "",
+          
+          // System fields
+          status: claim.status || "new",
+          dateSubmitted: claim.dateSubmitted || new Date().toISOString(),
+          signature: claim.signature || "",
+          
+          // Save existing missing information
+          missingInformation: claim.missingInformation || []
         } : {}}
         onSubmit={handleSubmit}
         onCancel={onClose}

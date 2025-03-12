@@ -288,35 +288,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Generate a unique claim number
             const claimNumber = `CLM-${Date.now().toString().slice(-8)}`;
             
-            // Create the new claim
+            // Create the new claim - map the extracted data to our schema fields
             const newClaim = await storage.createClaim({
               claimNumber,
-              customerName: extractedData.customerName || 'Unknown Customer',
+              // Ward form specific fields
+              wardProNumber: extractedData.wardProNumber || null,
+              todaysDate: extractedData.todaysDate || null,
+              freightBillDate: extractedData.freightBillDate || null,
+              claimantsRefNumber: extractedData.claimantsRefNumber || null,
+              
+              // Claim details
+              claimAmount: extractedData.claimAmount || '',
+              claimType: extractedData.claimType || 'damage',
+              
+              // Shipper information
+              shipperName: extractedData.shipperName || '',
+              shipperAddress: extractedData.shipperAddress || '',
+              shipperPhone: extractedData.shipperPhone || '',
+              
+              // Consignee information
+              consigneeName: extractedData.consigneeName || '',
+              consigneeAddress: extractedData.consigneeAddress || '',
+              consigneePhone: extractedData.consigneePhone || '',
+              
+              // Claim description
+              claimDescription: extractedData.claimDescription || `Claim created from document: ${file.originalname}`,
+              
+              // Supporting documents
+              originalBillOfLading: typeof extractedData.originalBillOfLading === 'boolean' ? extractedData.originalBillOfLading : false,
+              originalFreightBill: typeof extractedData.originalFreightBill === 'boolean' ? extractedData.originalFreightBill : false,
+              originalInvoice: typeof extractedData.originalInvoice === 'boolean' ? extractedData.originalInvoice : false,
+              
+              // Additional information
+              isRepairable: extractedData.isRepairable || '',
+              repairCost: extractedData.repairCost || '',
+              
+              // Claimant information
+              companyName: extractedData.companyName || 'Ward Trucking Corp',
+              address: extractedData.address || '',
               contactPerson: extractedData.contactPerson || '',
               email: extractedData.email || '',
               phone: extractedData.phone || '',
-              orderNumber: extractedData.orderNumber || '',
-              claimAmount: extractedData.claimAmount || '',
-              claimType: extractedData.claimType || 'General',
-              description: extractedData.description || `Claim created from document: ${file.originalname}`,
+              fax: extractedData.fax || '',
+              
+              // System fields
               status: 'new',
               assignedTo: null,
               missingInformation: analysisResult.missingInformation || [],
-              // Additional fields from PDF form
-              addressLine1: extractedData.addressLine1 || '',
-              addressLine2: extractedData.addressLine2 || '',
-              city: extractedData.city || '',
-              state: extractedData.state || '',
-              zipCode: extractedData.zipCode || '',
-              country: extractedData.country || '',
-              purchaseDate: extractedData.purchaseDate || '',
-              productName: extractedData.productName || '',
-              productSku: extractedData.productSku || '',
-              productQuantity: extractedData.productQuantity || '',
-              damageDescription: extractedData.damageDescription || '',
-              preferredResolution: extractedData.preferredResolution || '',
-              dateOfIncident: extractedData.dateOfIncident || '',
-              attachments: '',
               signature: ''
             });
             
@@ -405,14 +423,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Only update fields that are empty in the claim
           const claim = await storage.getClaim(newClaimId);
           if (claim) {
-            if (!claim.customerName && extractedData.customerName) updateData.customerName = extractedData.customerName;
+            // Basic Ward form fields
+            if (!claim.wardProNumber && extractedData.wardProNumber) updateData.wardProNumber = extractedData.wardProNumber;
+            if (!claim.todaysDate && extractedData.todaysDate) updateData.todaysDate = extractedData.todaysDate;
+            if (!claim.freightBillDate && extractedData.freightBillDate) updateData.freightBillDate = extractedData.freightBillDate;
+            if (!claim.claimantsRefNumber && extractedData.claimantsRefNumber) updateData.claimantsRefNumber = extractedData.claimantsRefNumber;
+            
+            // Claim details
+            if (!claim.claimAmount && extractedData.claimAmount) updateData.claimAmount = extractedData.claimAmount;
+            if (!claim.claimType && extractedData.claimType) updateData.claimType = extractedData.claimType;
+            
+            // Shipper information
+            if (!claim.shipperName && extractedData.shipperName) updateData.shipperName = extractedData.shipperName;
+            if (!claim.shipperAddress && extractedData.shipperAddress) updateData.shipperAddress = extractedData.shipperAddress;
+            if (!claim.shipperPhone && extractedData.shipperPhone) updateData.shipperPhone = extractedData.shipperPhone;
+            
+            // Consignee information
+            if (!claim.consigneeName && extractedData.consigneeName) updateData.consigneeName = extractedData.consigneeName;
+            if (!claim.consigneeAddress && extractedData.consigneeAddress) updateData.consigneeAddress = extractedData.consigneeAddress;
+            if (!claim.consigneePhone && extractedData.consigneePhone) updateData.consigneePhone = extractedData.consigneePhone;
+            
+            // Claimant information
+            if (!claim.companyName && extractedData.companyName) updateData.companyName = extractedData.companyName;
             if (!claim.contactPerson && extractedData.contactPerson) updateData.contactPerson = extractedData.contactPerson;
             if (!claim.email && extractedData.email) updateData.email = extractedData.email;
             if (!claim.phone && extractedData.phone) updateData.phone = extractedData.phone;
-            if (!claim.orderNumber && extractedData.orderNumber) updateData.orderNumber = extractedData.orderNumber;
-            if (!claim.claimAmount && extractedData.claimAmount) updateData.claimAmount = extractedData.claimAmount;
-            if (!claim.claimType && extractedData.claimType) updateData.claimType = extractedData.claimType;
-            if (!claim.description && extractedData.description) updateData.description = extractedData.description;
+            
+            // Claim description
+            if (!claim.claimDescription && extractedData.claimDescription) updateData.claimDescription = extractedData.claimDescription;
             
             // Update claim if there are fields to update
             if (Object.keys(updateData).length > 0) {
