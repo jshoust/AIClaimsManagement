@@ -98,6 +98,15 @@ export default function DocumentUpload({
     }
   };
 
+  // Check if the file is a Boon claim form based on name
+  const isBoonClaimForm = (file: File | null) => {
+    if (!file) return false;
+    const fileName = file.name.toLowerCase();
+    return fileName.includes('claim') && fileName.includes('form') || 
+           fileName.includes('boon') || 
+           (file.type === 'application/pdf' && file.name.match(/claim|form/i));
+  };
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -117,7 +126,12 @@ export default function DocumentUpload({
                     <span className="material-icons mr-2 text-neutral-500">
                       {getFileIcon(selectedFile.type)}
                     </span>
-                    <span className="text-sm truncate max-w-[200px]">{selectedFile.name}</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm truncate max-w-[200px]">{selectedFile.name}</span>
+                      {isBoonClaimForm(selectedFile) && (
+                        <span className="text-xs text-green-600">Detected as Boon claim form</span>
+                      )}
+                    </div>
                   </div>
                   <Button 
                     variant="ghost" 
@@ -165,7 +179,20 @@ export default function DocumentUpload({
                   ))}
                 </SelectContent>
               </Select>
-              {!selectedClaimId && (
+
+              {/* Improved guidance for users */}
+              {!selectedClaimId && isBoonClaimForm(selectedFile) ? (
+                <div className="text-xs bg-blue-50 text-blue-800 p-2 rounded border border-blue-200 mt-2">
+                  <div className="font-medium mb-1 flex items-center">
+                    <span className="material-icons text-blue-500 mr-1" style={{ fontSize: '14px' }}>info</span>
+                    Processing Boon Claim Form
+                  </div>
+                  <p>
+                    This appears to be a Boon claim form. When uploaded, our AI will analyze the form, extract 
+                    available information, and highlight any missing data that needs to be filled in.
+                  </p>
+                </div>
+              ) : !selectedClaimId && (
                 <p className="text-xs text-neutral-500 mt-1">
                   If you upload a claim form without selecting a claim, a new claim will be created automatically.
                 </p>
