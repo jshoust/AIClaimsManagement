@@ -40,16 +40,37 @@ export default function Documents() {
       }
       return uploadFile(selectedFile, selectedClaimId);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Invalidate both documents and claims queries to refresh the UI
       queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/claims'] });
+      
+      // Also invalidate tasks if a new claim was created
+      if (data.claim) {
+        queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+      }
+      
       setUploadDialogOpen(false);
       setSelectedFile(null);
       setSelectedClaimId(null);
       
-      toast({
-        title: "File Uploaded",
-        description: "The document was uploaded successfully.",
-      });
+      // Custom message if a new claim was created
+      if (data.claim) {
+        toast({
+          title: "Claim Created",
+          description: `New claim #${data.claim.claimNumber} was created from the uploaded document.`,
+        });
+      } else {
+        toast({
+          title: "File Uploaded",
+          description: "The document was uploaded successfully.",
+        });
+      }
+      
+      // Select newly created document
+      if (data.document) {
+        setSelectedDocument(data.document);
+      }
     },
     onError: (error: Error) => {
       toast({

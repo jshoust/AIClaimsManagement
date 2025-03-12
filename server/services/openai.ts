@@ -85,26 +85,40 @@ export async function analyzeDocument(text: string): Promise<DocumentAnalysisRes
 
 /**
  * Analyzes a claim form PDF document using file path
- * This is a simplified placeholder as we're bypassing pdf-parse library
- * In a production environment, we'd properly extract PDF text, but for this demo
- * we'll use a simplified approach
+ * Uses pdf-parse library to extract text and then analyzes with OpenAI
  * 
  * @param filePath Path to the PDF file
  * @returns Analysis result
  */
 export async function analyzePDFDocument(filePath: string): Promise<DocumentAnalysisResult> {
   try {
-    // For simplicity, we'll use a placeholder text
-    // In a real application, you would extract text from the PDF
-    const placeholderText = `
-      This is a claim document. We're simulating the analysis of a PDF document
-      without actually parsing the PDF due to technical constraints.
-      
-      For the demonstration, we'll pretend this is a claim for product damage
-      from a company called Acme Corp.
-    `;
+    // Import pdf-parse dynamically to avoid issues in environments where it's not available
+    const pdfParse = await import('pdf-parse');
     
-    return analyzeDocument(placeholderText);
+    // Read the PDF file as buffer
+    const dataBuffer = fs.readFileSync(filePath);
+    
+    // Parse PDF to extract text
+    const pdfData = await pdfParse.default(dataBuffer);
+    
+    // Get the text content
+    const pdfText = pdfData.text;
+    
+    // If text extraction was successful
+    if (pdfText && pdfText.length > 0) {
+      console.log("Successfully extracted text from PDF, length: " + pdfText.length);
+      return analyzeDocument(pdfText);
+    } else {
+      console.warn("PDF text extraction returned empty content");
+      
+      // For scanned PDFs or image-based PDFs, we need a different approach
+      // Convert the PDF to base64 and try image analysis
+      const fileBuffer = fs.readFileSync(filePath);
+      const base64Data = fileBuffer.toString('base64');
+      
+      // Use image-based analysis as fallback
+      return analyzeImageDocument(base64Data);
+    }
   } catch (error: any) {
     console.error("Error in analyzePDFDocument:", error);
     
@@ -124,11 +138,48 @@ export async function analyzePDFDocument(filePath: string): Promise<DocumentAnal
  */
 export async function analyzeImageDocument(imageBase64: string): Promise<DocumentAnalysisResult> {
   try {
-    const prompt = `Please analyze this claim form image and identify any missing information, extract key data, and provide a summary.`;
+    const prompt = `
+    You are an expert claims analyst for Boon AI Claims Processing.
+    
+    Please analyze the following claim form image and provide a detailed analysis with the following information:
+    
+    1. Identify any missing information that would be required to process the claim properly. Every empty or incomplete field should be listed.
+    2. Extract all key information from the claim in a structured format.
+    3. Provide a brief summary of the claim.
+    
+    The important fields to check for are:
+    - Customer name
+    - Contact person
+    - Email address
+    - Phone number
+    - Order number
+    - Claim amount
+    - Claim type
+    - Description of the claim
+    
+    Consider any empty or incomplete field as missing information.
+    
+    Respond with JSON in the following format:
+    {
+      "missingInformation": ["string array of missing information items"],
+      "extractedData": {
+        "customerName": "string",
+        "contactPerson": "string",
+        "email": "string",
+        "phone": "string",
+        "orderNumber": "string",
+        "claimAmount": "string",
+        "claimType": "string",
+        "description": "string"
+      },
+      "summary": "string summary of the claim"
+    }
+    `;
 
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
+        { role: "system", content: "You are a claims analysis assistant for Boon Claims Management with expertise in extracting information from claim forms." },
         { 
           role: "user", 
           content: [
@@ -139,7 +190,7 @@ export async function analyzeImageDocument(imageBase64: string): Promise<Documen
             {
               type: "image_url",
               image_url: {
-                url: `data:image/jpeg;base64,${imageBase64}`
+                url: `data:image/application/pdf;base64,${imageBase64}`
               }
             }
           ]

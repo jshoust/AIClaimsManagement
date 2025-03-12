@@ -416,15 +416,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Return both the document and analysis result if available
+      // For UI refreshing, get the claim if one was created
+      let createdClaim = null;
+      if (newClaimId && newClaimId !== claimId) {  // If a new claim was created
+        createdClaim = await storage.getClaim(newClaimId);
+      }
+      
+      // Return both the document, analysis result, and the created claim if available
       if (analysisResult) {
         res.status(201).json({
           document,
-          analysisResult
+          analysisResult,
+          claim: createdClaim
         });
       } else {
         res.status(201).json({
-          document
+          document,
+          claim: createdClaim
         });
       }
     } catch (error) {
