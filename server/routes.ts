@@ -309,6 +309,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   details: `Boon AI identified missing information in document: ${analysisResult.missingInformation.join(', ')}`
                 }
               });
+              
+              // Automatically create tasks for each missing information item
+              for (const missingItem of analysisResult.missingInformation) {
+                await storage.createTask({
+                  title: `Follow up: ${missingItem}`,
+                  description: `Follow up with the customer to collect the missing information: ${missingItem}`,
+                  claimId,
+                  assignedTo: null, // Unassigned by default
+                  status: 'pending',
+                  priority: 'high',
+                  dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Due in 3 days
+                  metadata: {
+                    source: 'automatic',
+                    documentId: document.id,
+                    missingInformation: missingItem,
+                    analysisDate: new Date().toISOString()
+                  }
+                });
+              }
             }
             
             // If there are extracted data fields that can be used to update the claim
@@ -415,6 +434,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
             details: `Boon AI identified missing information in document: ${analysisResult.missingInformation.join(', ')}`
           }
         });
+        
+        // Automatically create tasks for each missing information item
+        for (const missingItem of analysisResult.missingInformation) {
+          await storage.createTask({
+            title: `Follow up: ${missingItem}`,
+            description: `Follow up with the customer to collect the missing information: ${missingItem}`,
+            claimId: document.claimId,
+            assignedTo: null, // Unassigned by default
+            status: 'pending',
+            priority: 'high',
+            dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Due in 3 days
+            metadata: {
+              source: 'automatic',
+              documentId: document.id,
+              missingInformation: missingItem,
+              analysisDate: new Date().toISOString()
+            }
+          });
+        }
       }
       
       res.json({
