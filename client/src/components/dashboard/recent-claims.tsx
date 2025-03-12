@@ -39,7 +39,7 @@ export function RecentClaims({ claims, onSelectClaim }: RecentClaimsProps) {
               claims.map((claim) => (
                 <tr key={claim.id} className="hover:bg-neutral-50 border-b border-neutral-200">
                   <td className="px-4 py-3 font-medium text-primary">#{claim.claimNumber}</td>
-                  <td className="px-4 py-3">{claim.customerName}</td>
+                  <td className="px-4 py-3">{claim.shipperName || "Unknown"}</td>
                   <td className="px-4 py-3 text-neutral-500">{formatDate(claim.dateSubmitted)}</td>
                   <td className="px-4 py-3">
                     <StatusBadge status={claim.status as any} />

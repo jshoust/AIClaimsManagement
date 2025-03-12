@@ -172,9 +172,9 @@ export default function DocumentUpload({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">No claim (create new if applicable)</SelectItem>
-                  {claims.map((claim) => (
+                  {claims.map((claim) => claim.id && (
                     <SelectItem key={claim.id} value={claim.id.toString()}>
-                      {claim.claimNumber} - {claim.customerName}
+                      {claim.claimNumber} - {claim.shipperName || "Unknown Customer"}
                     </SelectItem>
                   ))}
                 </SelectContent>

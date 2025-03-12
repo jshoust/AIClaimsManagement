@@ -97,9 +97,9 @@ export default function Claims({ onSelectClaim, selectedClaimId }: ClaimsProps) 
                 <thead>
                   <tr className="text-left text-neutral-500 bg-neutral-50">
                     <th className="px-4 py-3 font-medium">Claim ID</th>
-                    <th className="px-4 py-3 font-medium">Customer</th>
-                    <th className="px-4 py-3 font-medium">Contact</th>
-                    <th className="px-4 py-3 font-medium">Order #</th>
+                    <th className="px-4 py-3 font-medium">Shipper Name</th>
+                    <th className="px-4 py-3 font-medium">Company</th>
+                    <th className="px-4 py-3 font-medium">Freight Bill Date</th>
                     <th className="px-4 py-3 font-medium">Amount</th>
                     <th className="px-4 py-3 font-medium">Date</th>
                     <th className="px-4 py-3 font-medium">Status</th>
@@ -133,9 +133,9 @@ export default function Claims({ onSelectClaim, selectedClaimId }: ClaimsProps) 
                         style={{ cursor: 'pointer' }}
                       >
                         <td className="px-4 py-3 font-medium text-primary">#{claim.claimNumber}</td>
-                        <td className="px-4 py-3">{claim.customerName}</td>
-                        <td className="px-4 py-3">{claim.contactPerson}</td>
-                        <td className="px-4 py-3">{claim.orderNumber}</td>
+                        <td className="px-4 py-3">{claim.shipperName || "Unknown"}</td>
+                        <td className="px-4 py-3">{claim.companyName || "Unknown"}</td>
+                        <td className="px-4 py-3">{claim.freightBillDate || "-"}</td>
                         <td className="px-4 py-3">{claim.claimAmount}</td>
                         <td className="px-4 py-3 text-neutral-500">{formatDate(claim.dateSubmitted)}</td>
                         <td className="px-4 py-3">
