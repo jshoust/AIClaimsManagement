@@ -201,25 +201,25 @@ export function ClaimForm({
           <div className="space-y-8">
             {/* Customer Information Section */}
             <div className="space-y-6">
-              <h2 className="text-xl font-semibold">Customer Information</h2>
+              <h2 className="text-xl font-semibold">Shipper Information</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Customer Name */}
+                {/* Shipper Name */}
                 <div className="space-y-2">
-                  <Label htmlFor="customerName" className={cn(
-                    isMissing("customerName") && "text-red-500 font-medium"
+                  <Label htmlFor="shipperName" className={cn(
+                    isMissing("shipperName") && "text-red-500 font-medium"
                   )}>
-                    Company/Customer Name {isMissing("customerName") && "*"}
+                    Shipper Name {isMissing("shipperName") && "*"}
                   </Label>
                   <Input
-                    id="customerName"
-                    {...form.register("customerName")}
+                    id="shipperName"
+                    {...form.register("shipperName")}
                     className={cn(
-                      isMissing("customerName") && "border-red-500 focus-visible:ring-red-500"
+                      isMissing("shipperName") && "border-red-500 focus-visible:ring-red-500"
                     )}
                   />
-                  {form.formState.errors.customerName && (
-                    <p className="text-red-500 text-sm">{form.formState.errors.customerName.message}</p>
+                  {form.formState.errors.shipperName && (
+                    <p className="text-red-500 text-sm">{form.formState.errors.shipperName.message}</p>
                   )}
                 </div>
                 
@@ -398,45 +398,45 @@ export function ClaimForm({
             
             {/* Order Information */}
             <div className="space-y-6">
-              <h2 className="text-xl font-semibold">Order Information</h2>
+              <h2 className="text-xl font-semibold">Freight Bill Information</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Order Number */}
+                {/* Ward Pro Number */}
                 <div className="space-y-2">
-                  <Label htmlFor="orderNumber" className={cn(
-                    isMissing("orderNumber") && "text-red-500 font-medium"
+                  <Label htmlFor="wardProNumber" className={cn(
+                    isMissing("wardProNumber") && "text-red-500 font-medium"
                   )}>
-                    Order/Invoice Number {isMissing("orderNumber") && "*"}
+                    Ward Pro Number {isMissing("wardProNumber") && "*"}
                   </Label>
                   <Input
-                    id="orderNumber"
-                    {...form.register("orderNumber")}
+                    id="wardProNumber"
+                    {...form.register("wardProNumber")}
                     className={cn(
-                      isMissing("orderNumber") && "border-red-500 focus-visible:ring-red-500"
+                      isMissing("wardProNumber") && "border-red-500 focus-visible:ring-red-500"
                     )}
                   />
-                  {form.formState.errors.orderNumber && (
-                    <p className="text-red-500 text-sm">{form.formState.errors.orderNumber.message}</p>
+                  {form.formState.errors.wardProNumber && (
+                    <p className="text-red-500 text-sm">{form.formState.errors.wardProNumber.message}</p>
                   )}
                 </div>
                 
-                {/* Purchase Date */}
+                {/* Freight Bill Date */}
                 <div className="space-y-2">
-                  <Label htmlFor="purchaseDate" className={cn(
-                    isMissing("purchaseDate") && "text-red-500 font-medium"
+                  <Label htmlFor="freightBillDate" className={cn(
+                    isMissing("freightBillDate") && "text-red-500 font-medium"
                   )}>
-                    Purchase Date {isMissing("purchaseDate") && "*"}
+                    Freight Bill Date {isMissing("freightBillDate") && "*"}
                   </Label>
                   <Input
-                    id="purchaseDate"
+                    id="freightBillDate"
                     type="date"
-                    {...form.register("purchaseDate")}
+                    {...form.register("freightBillDate")}
                     className={cn(
-                      isMissing("purchaseDate") && "border-red-500 focus-visible:ring-red-500"
+                      isMissing("freightBillDate") && "border-red-500 focus-visible:ring-red-500"
                     )}
                   />
-                  {form.formState.errors.purchaseDate && (
-                    <p className="text-red-500 text-sm">{form.formState.errors.purchaseDate.message}</p>
+                  {form.formState.errors.freightBillDate && (
+                    <p className="text-red-500 text-sm">{form.formState.errors.freightBillDate.message}</p>
                   )}
                 </div>
                 

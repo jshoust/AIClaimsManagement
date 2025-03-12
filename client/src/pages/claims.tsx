@@ -31,9 +31,9 @@ export default function Claims({ onSelectClaim, selectedClaimId }: ClaimsProps) 
     const matchesSearch = 
       searchTerm === "" || 
       claim.claimNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      claim.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      claim.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      claim.orderNumber.toLowerCase().includes(searchTerm.toLowerCase());
+      (claim.shipperName && claim.shipperName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (claim.companyName && claim.companyName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (claim.wardProNumber && claim.wardProNumber.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesStatus = statusFilter === "all" || claim.status === statusFilter;
     
