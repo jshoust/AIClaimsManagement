@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { SummaryCard } from "@/components/dashboard/summary-card";
 import { RecentClaims } from "@/components/dashboard/recent-claims";
 import { PendingTasks } from "@/components/dashboard/pending-tasks";
-import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { AIInsights } from "@/components/dashboard/ai-insights";
 import { WardClaimModal } from "@/components/claims/ward-claim-modal";
 import { CreateTaskModal } from "@/components/tasks/create-task-modal";
@@ -156,17 +155,12 @@ export default function Dashboard({ onSelectClaim, selectedClaimId }: DashboardP
             </div>
           </div>
           
-          {/* AI Insights & Recent Activity */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <AIInsights 
-                claims={claims || []}
-                tasks={tasks || []}
-              />
-            </div>
-            <div>
-              <RecentActivity activities={recentActivities} />
-            </div>
+          {/* AI Insights */}
+          <div className="mt-6">
+            <AIInsights 
+              claims={claims || []}
+              tasks={tasks || []}
+            />
           </div>
         </div>
         

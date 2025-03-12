@@ -4,16 +4,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Chart, LineChart, BarChart, PieChart } from "@/components/ui/chart";
+import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Activity } from "@shared/schema";
 
 export default function Reports() {
   const [activeTab, setActiveTab] = useState("overview");
   const [dateRange, setDateRange] = useState("30d");
 
   // Fetch claims data for reports
-  const { data: claims } = useQuery({
+  const { data: claims = [] } = useQuery({
     queryKey: ['/api/claims'],
+  });
+  
+  // Fetch activities for recent activity panel
+  const { data: activities = [] } = useQuery<Activity[]>({
+    queryKey: ['/api/activities'],
   });
   
   // Example data for charts
@@ -271,6 +278,12 @@ export default function Reports() {
           </div>
         </TabsContent>
       </Tabs>
+      
+      {/* Recent Activity Section */}
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-4">Recent Activity</h2>
+        <RecentActivity activities={activities} />
+      </div>
     </div>
   );
 }
