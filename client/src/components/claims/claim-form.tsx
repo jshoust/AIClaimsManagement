@@ -174,11 +174,11 @@ export function ClaimForm({
           type="button"
           className={cn(
             "px-4 py-2 font-medium text-sm",
-            activeTab === "customerInfo" 
+            activeTab === "claimInfo" 
               ? "border-b-2 border-primary text-primary" 
               : "text-muted-foreground hover:text-foreground"
           )}
-          onClick={() => setActiveTab("customerInfo")}
+          onClick={() => setActiveTab("claimInfo")}
         >
           Claim Information
         </button>
@@ -186,18 +186,18 @@ export function ClaimForm({
           type="button"
           className={cn(
             "px-4 py-2 font-medium text-sm", 
-            activeTab === "claimDetails" 
+            activeTab === "shipmentDetails" 
               ? "border-b-2 border-primary text-primary" 
               : "text-muted-foreground hover:text-foreground"
           )}
-          onClick={() => setActiveTab("claimDetails")}
+          onClick={() => setActiveTab("shipmentDetails")}
         >
           Shipping Details
         </button>
       </div>
       
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
-        {activeTab === "customerInfo" && (
+        {activeTab === "claimInfo" && (
           <div className="space-y-8">
             {/* Customer Information Section */}
             <div className="space-y-6">
@@ -499,14 +499,14 @@ export function ClaimForm({
               <Button type="button" variant="outline" onClick={onCancel}>
                 Cancel
               </Button>
-              <Button type="button" onClick={() => setActiveTab("claimDetails")}>
-                Next: Claim Details
+              <Button type="button" onClick={() => setActiveTab("shipmentDetails")}>
+                Next: Shipping Details
               </Button>
             </div>
           </div>
         )}
         
-        {activeTab === "claimDetails" && (
+        {activeTab === "shipmentDetails" && (
           <div className="space-y-8">
             {/* Claim Information */}
             <div className="space-y-6">
@@ -697,8 +697,8 @@ export function ClaimForm({
             </div>
             
             <div className="flex justify-between">
-              <Button type="button" variant="outline" onClick={() => setActiveTab("customerInfo")}>
-                Back: Customer Information
+              <Button type="button" variant="outline" onClick={() => setActiveTab("claimInfo")}>
+                Back: Claim Information
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? "Submitting..." : "Submit Claim"}
