@@ -40,6 +40,7 @@ export interface IStorage {
   getDocument(id: number): Promise<Document | undefined>;
   getDocumentsByClaim(claimId: number): Promise<Document[]>;
   createDocument(document: InsertDocument): Promise<Document>;
+  updateDocument(id: number, document: Partial<Document>): Promise<Document | undefined>;
   
   // Email template operations
   getEmailTemplates(): Promise<EmailTemplate[]>;
@@ -229,6 +230,15 @@ export class MemStorage implements IStorage {
     };
     this.documents.set(id, document);
     return document;
+  }
+  
+  async updateDocument(id: number, updatedFields: Partial<Document>): Promise<Document | undefined> {
+    const document = this.documents.get(id);
+    if (!document) return undefined;
+    
+    const updatedDocument = { ...document, ...updatedFields };
+    this.documents.set(id, updatedDocument);
+    return updatedDocument;
   }
   
   // Email template operations

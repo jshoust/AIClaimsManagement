@@ -269,10 +269,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
         uploadedBy
       });
       
-      // If document is associated with a claim, create an activity record
-      if (claimId) {
+      // Analyze the document if it's a PDF
+      let analysisResult = null;
+      let newClaimId = claimId;
+      
+      if (file.mimetype === 'application/pdf') {
+        try {
+          // Process the document with OpenAI
+          analysisResult = await analyzePDFDocument(file.path);
+          
+          // If no claim is associated, create a new claim based on analysis
+          if (!claimId && analysisResult.extractedData) {
+            const extractedData = analysisResult.extractedData;
+            
+            // Generate a unique claim number
+            const claimNumber = `CLM-${Date.now().toString().slice(-8)}`;
+            
+            // Create the new claim
+            const newClaim = await storage.createClaim({
+              claimNumber,
+              customerName: extractedData.customerName || 'Unknown Customer',
+              contactPerson: extractedData.contactPerson || null,
+              email: extractedData.email || null,
+              phone: extractedData.phone || null,
+              orderNumber: extractedData.orderNumber || null,
+              claimAmount: extractedData.claimAmount || null,
+              claimType: extractedData.claimType || 'General',
+              description: extractedData.description || `Claim created from document: ${file.originalname}`,
+              status: 'new',
+              assignedTo: null,
+              missingInformation: analysisResult.missingInformation || []
+            });
+            
+            // Update document with the new claim ID
+            await storage.updateDocument(document.id, { claimId: newClaim.id });
+            document.claimId = newClaim.id;
+            newClaimId = newClaim.id;
+            
+            // Create claim creation activity
+            await storage.createActivity({
+              claimId: newClaim.id,
+              type: "status_update",
+              description: "New Claim Created from Document",
+              createdBy: "Boon AI",
+              metadata: {
+                documentId: document.id,
+                fileName: file.originalname,
+                details: `Claim created automatically from uploaded document`
+              }
+            });
+          }
+        } catch (analysisError) {
+          console.error("Error analyzing document:", analysisError);
+        }
+      }
+      
+      // If document is associated with a claim (either original or newly created), create an activity record
+      if (newClaimId) {
         await storage.createActivity({
-          claimId,
+          claimId: newClaimId,
           type: ActivityType.DOCUMENT,
           description: `Document Uploaded: ${file.originalname}`,
           createdBy: uploadedBy,
@@ -284,105 +339,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
         
-        // If it's a PDF file, analyze it automatically
-        let analysisResult = null;
-        if (file.mimetype === 'application/pdf') {
-          try {
-            // Process the document with OpenAI
-            analysisResult = await analyzePDFDocument(file.path);
-            
-            // If associated with a claim, update claim with any missing information
-            if (claimId && analysisResult.missingInformation && analysisResult.missingInformation.length > 0) {
-              await storage.updateClaim(claimId, { 
-                missingInformation: analysisResult.missingInformation 
-              });
-              
-              // Create activity for missing information
-              await storage.createActivity({
-                claimId,
-                type: "analysis",
-                description: "Document Analysis: Missing Information Found",
-                createdBy: "Boon AI",
-                metadata: {
-                  documentId: document.id,
-                  missingInformation: analysisResult.missingInformation,
-                  details: `Boon AI identified missing information in document: ${analysisResult.missingInformation.join(', ')}`
-                }
-              });
-              
-              // Automatically create tasks for each missing information item
-              for (const missingItem of analysisResult.missingInformation) {
-                await storage.createTask({
-                  title: `Follow up: ${missingItem}`,
-                  description: `Follow up with the customer to collect the missing information: ${missingItem}`,
-                  claimId,
-                  assignedTo: null, // Unassigned by default
-                  status: 'pending',
-                  dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Due in 3 days
-                  metadata: {
-                    priority: 'high',
-                    source: 'automatic',
-                    documentId: document.id,
-                    missingInformation: missingItem,
-                    analysisDate: new Date().toISOString()
-                  }
-                });
-              }
+        // Process any missing information if we have analysis results
+        if (analysisResult && analysisResult.missingInformation && analysisResult.missingInformation.length > 0) {
+          await storage.updateClaim(newClaimId, { 
+            missingInformation: analysisResult.missingInformation 
+          });
+          
+          // Create activity for missing information
+          await storage.createActivity({
+            claimId: newClaimId,
+            type: "analysis",
+            description: "Document Analysis: Missing Information Found",
+            createdBy: "Boon AI",
+            metadata: {
+              documentId: document.id,
+              missingInformation: analysisResult.missingInformation,
+              details: `Boon AI identified missing information in document: ${analysisResult.missingInformation.join(', ')}`
             }
-            
-            // If there are extracted data fields that can be used to update the claim
-            if (claimId && analysisResult.extractedData) {
-              const extractedData = analysisResult.extractedData;
-              const updateData: any = {};
-              
-              // Only update fields that are empty in the claim
-              const claim = await storage.getClaim(claimId);
-              if (claim) {
-                if (!claim.customerName && extractedData.customerName) updateData.customerName = extractedData.customerName;
-                if (!claim.contactPerson && extractedData.contactPerson) updateData.contactPerson = extractedData.contactPerson;
-                if (!claim.email && extractedData.email) updateData.email = extractedData.email;
-                if (!claim.phone && extractedData.phone) updateData.phone = extractedData.phone;
-                if (!claim.orderNumber && extractedData.orderNumber) updateData.orderNumber = extractedData.orderNumber;
-                if (!claim.claimAmount && extractedData.claimAmount) updateData.claimAmount = extractedData.claimAmount;
-                if (!claim.claimType && extractedData.claimType) updateData.claimType = extractedData.claimType;
-                if (!claim.description && extractedData.description) updateData.description = extractedData.description;
-                
-                // Update claim if there are fields to update
-                if (Object.keys(updateData).length > 0) {
-                  await storage.updateClaim(claimId, updateData);
-                  
-                  // Create activity for data extraction
-                  await storage.createActivity({
-                    claimId,
-                    type: "analysis",
-                    description: "Document Analysis: Data Extracted",
-                    createdBy: "Boon AI",
-                    metadata: {
-                      documentId: document.id,
-                      extractedData: updateData,
-                      details: `Boon AI extracted and updated claim data from document`
-                    }
-                  });
-                }
+          });
+          
+          // Automatically create tasks for each missing information item
+          for (const missingItem of analysisResult.missingInformation) {
+            await storage.createTask({
+              title: `Follow up: ${missingItem}`,
+              description: `Follow up with the customer to collect the missing information: ${missingItem}`,
+              claimId: newClaimId,
+              assignedTo: null, // Unassigned by default
+              status: 'pending',
+              dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Due in 3 days
+              metadata: {
+                priority: 'high',
+                source: 'automatic',
+                documentId: document.id,
+                missingInformation: missingItem,
+                analysisDate: new Date().toISOString()
               }
-            }
-          } catch (analysisError) {
-            console.error("Error analyzing document:", analysisError);
-            // Don't fail the whole request if analysis fails
+            });
           }
         }
         
-        // Return both the document and analysis result if available
-        if (analysisResult) {
-          res.status(201).json({
-            document,
-            analysisResult
-          });
-        } else {
-          res.status(201).json({
-            document
-          });
+        // If there are extracted data fields that can be used to update the claim
+        if (newClaimId && analysisResult && analysisResult.extractedData) {
+          const extractedData = analysisResult.extractedData;
+          const updateData: any = {};
+          
+          // Only update fields that are empty in the claim
+          const claim = await storage.getClaim(newClaimId);
+          if (claim) {
+            if (!claim.customerName && extractedData.customerName) updateData.customerName = extractedData.customerName;
+            if (!claim.contactPerson && extractedData.contactPerson) updateData.contactPerson = extractedData.contactPerson;
+            if (!claim.email && extractedData.email) updateData.email = extractedData.email;
+            if (!claim.phone && extractedData.phone) updateData.phone = extractedData.phone;
+            if (!claim.orderNumber && extractedData.orderNumber) updateData.orderNumber = extractedData.orderNumber;
+            if (!claim.claimAmount && extractedData.claimAmount) updateData.claimAmount = extractedData.claimAmount;
+            if (!claim.claimType && extractedData.claimType) updateData.claimType = extractedData.claimType;
+            if (!claim.description && extractedData.description) updateData.description = extractedData.description;
+            
+            // Update claim if there are fields to update
+            if (Object.keys(updateData).length > 0) {
+              await storage.updateClaim(newClaimId, updateData);
+              
+              // Create activity for data extraction
+              await storage.createActivity({
+                claimId: newClaimId,
+                type: "analysis",
+                description: "Document Analysis: Data Extracted",
+                createdBy: "Boon AI",
+                metadata: {
+                  documentId: document.id,
+                  extractedData: updateData,
+                  details: `Boon AI extracted and updated claim data from document`
+                }
+              });
+            }
+          }
         }
+      }
+      
+      // Return both the document and analysis result if available
+      if (analysisResult) {
+        res.status(201).json({
+          document,
+          analysisResult
+        });
       } else {
         res.status(201).json({
           document
