@@ -70,17 +70,17 @@ export default function EditClaimForm({ claim, onClose }: EditClaimFormProps) {
         <div>
           <h2 className="text-2xl font-bold">Edit Claim</h2>
           <p className="text-muted-foreground">
-            Claim #{claim.claimNumber} | Submitted: {formatDate(claim.dateSubmitted)}
+            Claim #{claim?.claimNumber || ""} | Submitted: {claim?.dateSubmitted ? formatDate(claim.dateSubmitted) : ""}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <StatusBadge status={claim.status as any} />
+          <StatusBadge status={(claim?.status || "new") as any} />
         </div>
       </div>
       
       {/* Missing information alert - this is kept outside the ClaimForm to 
           show at the top level for admin users */}
-      {claim.missingInformation && claim.missingInformation.length > 0 && (
+      {claim?.missingInformation && Array.isArray(claim.missingInformation) && claim.missingInformation.length > 0 && (
         <Card className="mb-6 border-amber-500 bg-amber-50">
           <CardContent className="py-4">
             <div className="flex items-start">
@@ -88,7 +88,7 @@ export default function EditClaimForm({ claim, onClose }: EditClaimFormProps) {
               <div>
                 <h3 className="font-medium text-amber-800">Missing Information</h3>
                 <ul className="mt-1 pl-5 list-disc text-sm text-amber-700">
-                  {claim.missingInformation.map((item, index) => (
+                  {claim.missingInformation.map((item: string, index: number) => (
                     <li key={index}>{item}</li>
                   ))}
                 </ul>
@@ -100,15 +100,38 @@ export default function EditClaimForm({ claim, onClose }: EditClaimFormProps) {
       
       {/* The new claim form component that exactly matches the PDF structure */}
       <ClaimForm
-        initialData={{
+        initialData={claim ? {
           ...claim,
-          // Special handling for dates to ensure proper format for inputs
-          purchaseDate: claim.purchaseDate || "",
-          dateOfIncident: claim.dateOfIncident || "",
-        }}
+          // Ensure all required fields are present
+          claimNumber: claim.claimNumber || "",
+          wardProNumber: claim.wardProNumber || "",
+          todaysDate: claim.todaysDate || "",
+          freightBillDate: claim.freightBillDate || "",
+          claimantsRefNumber: claim.claimantsRefNumber || "",
+          claimAmount: claim.claimAmount || "",
+          claimType: claim.claimType || "damage",
+          shipperName: claim.shipperName || "",
+          shipperAddress: claim.shipperAddress || "",
+          shipperPhone: claim.shipperPhone || "",
+          consigneeName: claim.consigneeName || "",
+          consigneeAddress: claim.consigneeAddress || "",
+          consigneePhone: claim.consigneePhone || "",
+          claimDescription: claim.claimDescription || "",
+          originalBillOfLading: claim.originalBillOfLading || false,
+          originalFreightBill: claim.originalFreightBill || false,
+          originalInvoice: claim.originalInvoice || false,
+          isRepairable: claim.isRepairable || "",
+          repairCost: claim.repairCost || "",
+          companyName: claim.companyName || "",
+          address: claim.address || "",
+          contactPerson: claim.contactPerson || "",
+          email: claim.email || "",
+          phone: claim.phone || "",
+          fax: claim.fax || "",
+        } : {}}
         onSubmit={handleSubmit}
         onCancel={onClose}
-        missingFields={claim.missingInformation || []}
+        missingFields={claim?.missingInformation && Array.isArray(claim.missingInformation) ? claim.missingInformation : []}
         isLoading={isLoading}
       />
     </div>
