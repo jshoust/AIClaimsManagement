@@ -48,7 +48,7 @@ export async function generateClaimInsights(
       companyName: claim.companyName,
       claimAmount: claim.claimAmount,
       dateSubmitted: claim.dateSubmitted,
-      dateCompleted: claim.dateCompleted,
+      // Don't include dateResolved since it doesn't exist in schema
       claimType: claim.claimType,
       assignedTo: claim.assignedTo
     }));
@@ -59,7 +59,7 @@ export async function generateClaimInsights(
       title: task.title,
       description: task.description,
       dueDate: task.dueDate,
-      completed: task.completed,
+      status: task.status, // Use status instead of completed
       assignedTo: task.assignedTo
     }));
     
@@ -69,7 +69,7 @@ export async function generateClaimInsights(
       type: activity.type,
       description: activity.description,
       timestamp: activity.timestamp,
-      performedBy: activity.performedBy
+      createdBy: activity.createdBy // Use createdBy instead of performedBy
     }));
     
     // Analyze data with OpenAI
@@ -121,14 +121,15 @@ export async function generateClaimInsights(
     });
     
     // Parse the response
-    const result = JSON.parse(response.choices[0].message.content);
+    const responseContent = response.choices[0].message.content || '{}';
+    const result = JSON.parse(responseContent);
     
     const processingDuration = Date.now() - startTime;
     
     return {
-      insights: result.insights,
-      recommendations: result.recommendations,
-      summaryText: result.summaryText,
+      insights: result.insights || [],
+      recommendations: result.recommendations || [],
+      summaryText: result.summaryText || 'Analysis complete',
       processingDuration
     };
   } catch (error) {
@@ -200,7 +201,8 @@ export async function predictClaimOutcome(
       temperature: 0.3
     });
     
-    return JSON.parse(response.choices[0].message.content);
+    const responseContent = response.choices[0].message.content || '{}';
+    return JSON.parse(responseContent);
   } catch (error) {
     console.error("Error predicting claim outcome:", error);
     
