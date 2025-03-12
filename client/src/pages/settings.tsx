@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,11 +8,51 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
+// Define types for profile and settings
+interface ProfileSettings {
+  fullName: string;
+  email: string;
+  username: string;
+  role: string;
+}
+
 export default function Settings() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("account");
   
+  // State for profile information
+  const [profileSettings, setProfileSettings] = useState<ProfileSettings>({
+    fullName: "John Doe",
+    email: "john.doe@example.com", 
+    username: "johndoe",
+    role: "Claims Administrator"
+  });
+  
+  // Load saved settings on component mount
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('profileSettings');
+    if (savedSettings) {
+      try {
+        setProfileSettings(JSON.parse(savedSettings));
+      } catch (error) {
+        console.error("Error loading saved settings:", error);
+      }
+    }
+  }, []);
+  
+  // Handle input changes for profile settings
+  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setProfileSettings(prev => ({
+      ...prev,
+      [id]: value
+    }));
+  };
+  
   const handleSaveSettings = () => {
+    // Save profile settings to localStorage
+    localStorage.setItem('profileSettings', JSON.stringify(profileSettings));
+    
     toast({
       title: "Settings Saved",
       description: "Your settings have been updated successfully",
@@ -54,19 +94,36 @@ export default function Settings() {
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="fullName">Full Name</Label>
-                      <Input id="fullName" defaultValue="John Doe" />
+                      <Input 
+                        id="fullName" 
+                        value={profileSettings.fullName} 
+                        onChange={handleProfileChange}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
-                      <Input id="email" type="email" defaultValue="john.doe@example.com" />
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        value={profileSettings.email}
+                        onChange={handleProfileChange}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="username">Username</Label>
-                      <Input id="username" defaultValue="johndoe" />
+                      <Input 
+                        id="username" 
+                        value={profileSettings.username}
+                        onChange={handleProfileChange}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="role">Role</Label>
-                      <Input id="role" defaultValue="Claims Administrator" disabled />
+                      <Input 
+                        id="role" 
+                        value={profileSettings.role} 
+                        disabled 
+                      />
                     </div>
                   </div>
                 </div>
