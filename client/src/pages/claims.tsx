@@ -7,6 +7,7 @@ import DetailPanel from "@/components/layout/detail-panel";
 import { useQuery } from "@tanstack/react-query";
 import { Claim } from "@shared/schema";
 import { formatDate } from "@/lib/format-date";
+import { useLocation } from "wouter";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ClaimsProps {
@@ -18,6 +19,7 @@ export default function Claims({ onSelectClaim, selectedClaimId }: ClaimsProps) 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [, setLocation] = useLocation();
   
   // Fetch claims data
   const { data: claims, isLoading } = useQuery<Claim[]>({
@@ -127,7 +129,8 @@ export default function Claims({ onSelectClaim, selectedClaimId }: ClaimsProps) 
                         className={`hover:bg-neutral-50 border-b border-neutral-200 ${
                           selectedClaimId === claim.id ? 'bg-blue-50' : ''
                         }`}
-                        onClick={() => onSelectClaim(claim.id)}
+                        onClick={() => setLocation(`/claims/${claim.id}`)}
+                        style={{ cursor: 'pointer' }}
                       >
                         <td className="px-4 py-3 font-medium text-primary">#{claim.claimNumber}</td>
                         <td className="px-4 py-3">{claim.customerName}</td>
@@ -144,7 +147,7 @@ export default function Claims({ onSelectClaim, selectedClaimId }: ClaimsProps) 
                             className="text-primary hover:text-primary-dark"
                             onClick={(e) => {
                               e.stopPropagation();
-                              onSelectClaim(claim.id);
+                              setLocation(`/claims/${claim.id}`);
                             }}
                           >
                             <span className="material-icons">visibility</span>

@@ -8,6 +8,7 @@ import { CreateClaimModal } from "@/components/claims/create-claim-modal";
 import { CreateTaskModal } from "@/components/tasks/create-task-modal";
 import DetailPanel from "@/components/layout/detail-panel";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Claim, Task, Activity } from "@shared/schema";
 
 interface DashboardProps {
@@ -18,6 +19,7 @@ interface DashboardProps {
 export default function Dashboard({ onSelectClaim, selectedClaimId }: DashboardProps) {
   const [isCreateClaimModalOpen, setIsCreateClaimModalOpen] = useState(false);
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
+  const [, setLocation] = useLocation();
   
   // Fetch claims data
   const { data: claims, isLoading: isLoadingClaims } = useQuery<Claim[]>({
