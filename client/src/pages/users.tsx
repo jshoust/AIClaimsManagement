@@ -90,6 +90,9 @@ export default function Users() {
   const saveUsers = (updatedUsers: User[]) => {
     localStorage.setItem('users', JSON.stringify(updatedUsers));
     setUsers(updatedUsers);
+    
+    // Also dispatch the profileUpdated event to notify other components
+    window.dispatchEvent(new Event('profileUpdated'));
   };
   
   // Handle form input changes
