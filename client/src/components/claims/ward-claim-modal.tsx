@@ -93,11 +93,13 @@ export function WardClaimModal({ isOpen, onClose }: WardClaimModalProps) {
           </DialogTitle>
         </DialogHeader>
         
-        <WardClaimForm 
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          isLoading={false}
-        />
+        <div className="mt-4">
+          <WardClaimForm 
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            isLoading={false}
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );
