@@ -4,6 +4,7 @@ import { SummaryCard } from "@/components/dashboard/summary-card";
 import { RecentClaims } from "@/components/dashboard/recent-claims";
 import { PendingTasks } from "@/components/dashboard/pending-tasks";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
+import { AIInsights } from "@/components/dashboard/ai-insights";
 import { WardClaimModal } from "@/components/claims/ward-claim-modal";
 import { CreateTaskModal } from "@/components/tasks/create-task-modal";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -155,8 +156,18 @@ export default function Dashboard({ onSelectClaim, selectedClaimId }: DashboardP
             </div>
           </div>
           
-          {/* Recent Activity */}
-          <RecentActivity activities={recentActivities} />
+          {/* AI Insights & Recent Activity */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <AIInsights 
+                claims={claims || []}
+                tasks={tasks || []}
+              />
+            </div>
+            <div>
+              <RecentActivity activities={recentActivities} />
+            </div>
+          </div>
         </div>
         
         {/* Create Claim Modal - Using Ward Trucking Form */}

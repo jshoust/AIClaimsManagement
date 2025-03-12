@@ -775,6 +775,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // AI Insights routes
+  app.post('/api/ai/insights', async (req: Request, res: Response) => {
+    try {
+      // Verify API key exists
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ 
+          message: "OpenAI API key not configured",
+          insights: [],
+          recommendations: [],
+          summaryText: "AI analysis unavailable. Please configure OpenAI API key."
+        });
+      }
+      
+      // Get all claims, tasks, and activities
+      const claims = await storage.getClaims();
+      const tasks = await storage.getTasks();
+      const activities = await storage.getActivities();
+      
+      // Generate insights
+      const aiResult = await generateClaimInsights(claims, tasks, activities);
+      
+      res.json(aiResult);
+    } catch (error) {
+      console.error('Error generating AI insights:', error);
+      res.status(500).json({ 
+        message: "Failed to generate AI insights",
+        insights: [],
+        recommendations: [],
+        summaryText: "Error processing AI analysis request."
+      });
+    }
+  });
+  
+  app.post('/api/ai/predict-outcome', async (req: Request, res: Response) => {
+    try {
+      // Verify API key exists
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ 
+          message: "OpenAI API key not configured",
+          likelyOutcome: "Unable to generate prediction",
+          estimatedProcessingDays: 0,
+          potentialIssues: ["AI service unavailable - API key not configured"],
+          recommendedActions: []
+        });
+      }
+      
+      const schema = z.object({
+        claimData: z.record(z.any())
+      });
+      
+      const { claimData } = schema.parse(req.body);
+      
+      // Get historical claims for context
+      const historicalClaims = await storage.getClaims();
+      
+      // Generate prediction
+      const prediction = await predictClaimOutcome(historicalClaims, claimData);
+      
+      res.json(prediction);
+    } catch (error) {
+      console.error('Error predicting claim outcome:', error);
+      res.status(500).json({ 
+        message: "Failed to predict claim outcome",
+        likelyOutcome: "Error processing prediction request",
+        estimatedProcessingDays: 0,
+        potentialIssues: ["AI prediction service error"],
+        recommendedActions: []
+      });
+    }
+  });
+  
   const httpServer = createServer(app);
   return httpServer;
 }
