@@ -124,8 +124,8 @@ export default function EditClaimForm({ claim, onClose }: EditClaimFormProps) {
           consigneeAddress: claim.consigneeAddress || "",
           consigneePhone: claim.consigneePhone || "",
           
-          // Claim details
-          claimDescription: claim.claimDescription || claim.description || "",
+          // Claim details - handle both new and old field names
+          claimDescription: claim.claimDescription || "",
           
           // Supporting documents
           originalBillOfLading: claim.originalBillOfLading || false,
@@ -138,7 +138,7 @@ export default function EditClaimForm({ claim, onClose }: EditClaimFormProps) {
           
           // Claimant information
           companyName: claim.companyName || "",
-          address: claim.addressLine1 ? `${claim.addressLine1}${claim.addressLine2 ? ', ' + claim.addressLine2 : ''}` : "",
+          address: claim.address || "",
           contactPerson: claim.contactPerson || "",
           email: claim.email || "",
           phone: claim.phone || "",
