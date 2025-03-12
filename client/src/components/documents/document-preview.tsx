@@ -16,8 +16,9 @@ export default function DocumentPreview({ document }: DocumentPreviewProps) {
   useEffect(() => {
     if (document && document.filePath) {
       // Extract the filename from the path
-      const filename = document.filePath.split('/').pop();
+      const filename = document.fileName; // Use fileName directly as it's more reliable
       if (filename) {
+        // Use the filename directly to build the URL
         setPreviewUrl(`/uploads/${filename}`);
         setIsLoading(false);
       } else {

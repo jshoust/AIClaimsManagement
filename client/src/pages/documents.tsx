@@ -324,7 +324,7 @@ export default function Documents() {
                         className="w-full flex items-center gap-1"
                         onClick={() => {
                           if (selectedDocument) {
-                            window.open(`/uploads/${selectedDocument.filePath.split('/').pop()}`, '_blank');
+                            window.open(`/uploads/${selectedDocument.fileName}`, '_blank');
                           }
                         }}
                       >
@@ -337,7 +337,7 @@ export default function Documents() {
                         onClick={() => {
                           if (selectedDocument) {
                             const link = document.createElement('a');
-                            link.href = `/uploads/${selectedDocument.filePath.split('/').pop()}`;
+                            link.href = `/uploads/${selectedDocument.fileName}`;
                             link.download = selectedDocument.fileName;
                             link.click();
                           }
@@ -422,10 +422,25 @@ export default function Documents() {
                           <td className="px-4 py-3 text-neutral-500">{formatDate(doc.uploadedAt)}</td>
                           <td className="px-4 py-3">
                             <div className="flex space-x-1">
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8 w-8 p-0"
+                                onClick={() => window.open(`/uploads/${doc.fileName}`, '_blank')}
+                              >
                                 <span className="material-icons text-primary">visibility</span>
                               </Button>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8 w-8 p-0"
+                                onClick={() => {
+                                  const link = document.createElement('a');
+                                  link.href = `/uploads/${doc.fileName}`;
+                                  link.download = doc.fileName;
+                                  link.click();
+                                }}
+                              >
                                 <span className="material-icons text-primary">download</span>
                               </Button>
                             </div>
