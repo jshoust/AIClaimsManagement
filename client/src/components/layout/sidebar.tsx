@@ -28,7 +28,7 @@ export default function Sidebar({ activePath }: SidebarProps) {
     <aside className="w-56 bg-[#2e7d32] flex flex-col h-full">
       <div className="p-4 border-b border-[rgba(255,255,255,0.15)]">
         <div className="flex items-center">
-          <span className="text-white text-lg font-semibold">Navigation</span>
+          <span className="sr-only">Navigation menu</span>
         </div>
       </div>
       <nav className="p-3 flex-1 overflow-y-auto scrollbar-thin">
