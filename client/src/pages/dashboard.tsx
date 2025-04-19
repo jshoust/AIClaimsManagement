@@ -73,18 +73,18 @@ export default function Dashboard({ onSelectClaim, selectedClaimId }: DashboardP
       <main className="flex-1 overflow-y-auto scrollbar-thin p-6">
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-medium text-[#0f1c2e]">Dashboard</h2>
+            <h2 className="text-2xl font-medium text-[#3a5999]">Dashboard</h2>
             <div className="flex gap-3">
               <Button 
                 onClick={() => setIsCreateClaimModalOpen(true)}
-                className="flex items-center gap-1 bg-[#0f1c2e] hover:bg-[#1a2c45]"
+                className="flex items-center gap-1 bg-[#3a5999] hover:bg-[#2d4a7f]"
               >
                 <span className="material-icons text-sm">add</span>
                 New Claim
               </Button>
               <Button 
                 variant="outline"
-                className="flex items-center gap-1 border-[#0f1c2e] text-[#0f1c2e] hover:bg-[rgba(15,28,46,0.05)]"
+                className="flex items-center gap-1 border-[#3a5999] text-[#3a5999] hover:bg-[rgba(58,89,153,0.05)]"
                 onClick={() => {
                   // Refresh all data using React Query's refetch instead of full page reload
                   queryClient.refetchQueries({ queryKey: ['/api/claims'] });
@@ -108,9 +108,9 @@ export default function Dashboard({ onSelectClaim, selectedClaimId }: DashboardP
             <SummaryCard
               title="Total Claims"
               value={summaryStats.totalClaims}
-              icon={<span className="material-icons text-[#0f1c2e]">description</span>}
+              icon={<span className="material-icons text-[#3a5999]">description</span>}
               change={{ value: "3.2%", isPositive: true }}
-              iconColor="bg-[rgba(15,28,46,0.1)]"
+              iconColor="bg-[rgba(58,89,153,0.1)]"
             />
             
             <SummaryCard

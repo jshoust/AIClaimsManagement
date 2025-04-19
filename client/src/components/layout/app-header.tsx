@@ -95,7 +95,7 @@ export default function AppHeader() {
             alt="Boon" 
             className="h-8 mr-2" 
           />
-          <h1 className="text-xl font-medium text-[#0f1c2e] ml-1">AI Claims Processing</h1>
+          <h1 className="text-xl font-medium text-[#3a5999] ml-1">AI Claims Processing</h1>
         </div>
         <div className="flex items-center gap-4">
           <div className="relative">

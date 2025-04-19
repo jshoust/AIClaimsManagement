@@ -25,8 +25,8 @@ export default function Sidebar({ activePath }: SidebarProps) {
   ];
   
   return (
-    <aside className="w-56 bg-[#0f1c2e] flex flex-col h-full">
-      <div className="p-4 border-b border-[rgba(255,255,255,0.1)]">
+    <aside className="w-56 bg-[#3a5999] flex flex-col h-full">
+      <div className="p-4 border-b border-[rgba(255,255,255,0.15)]">
         <div className="flex items-center">
           <img 
             src="/img/Boon Logo.png" 
@@ -45,8 +45,8 @@ export default function Sidebar({ activePath }: SidebarProps) {
                 className={cn(
                   "flex items-center px-3 py-2 text-sm rounded-md",
                   activePath === item.path
-                    ? "bg-[rgba(255,255,255,0.1)] text-white font-medium"
-                    : "hover:bg-[rgba(255,255,255,0.05)] text-[#a0aec0]"
+                    ? "bg-[rgba(255,255,255,0.2)] text-white font-medium"
+                    : "hover:bg-[rgba(255,255,255,0.1)] text-white"
                 )}
               >
                 <span className="material-icons mr-3 text-current">{item.icon}</span>
@@ -56,10 +56,10 @@ export default function Sidebar({ activePath }: SidebarProps) {
           ))}
         </ul>
       </nav>
-      <div className="p-3 border-t border-[rgba(255,255,255,0.1)]">
+      <div className="p-3 border-t border-[rgba(255,255,255,0.15)]">
         <a 
           href="#help" 
-          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-[rgba(255,255,255,0.05)] text-[#a0aec0]"
+          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-[rgba(255,255,255,0.1)] text-white"
         >
           <span className="material-icons mr-3 text-current">help</span>
           Help & Support
