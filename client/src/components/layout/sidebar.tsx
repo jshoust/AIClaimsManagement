@@ -25,7 +25,7 @@ export default function Sidebar({ activePath }: SidebarProps) {
   ];
   
   return (
-    <aside className="w-56 bg-[#3a5999] flex flex-col h-full">
+    <aside className="w-56 bg-[#2e7d32] flex flex-col h-full">
       <div className="p-4 border-b border-[rgba(255,255,255,0.15)]">
         <div className="flex items-center">
           <img 
