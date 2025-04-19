@@ -90,10 +90,12 @@ export default function AppHeader() {
     <header className="bg-white border-b border-neutral-200 shadow-sm">
       <div className="flex justify-between items-center px-4 py-2">
         <div className="flex items-center">
-          <div className="h-8 w-8 mr-2 rounded-full bg-[hsl(155,60%,90%)] flex items-center justify-center text-[hsl(155,45%,35%)] font-bold">
-            B
-          </div>
-          <h1 className="text-xl font-medium text-[hsl(155,45%,35%)]">Boon AI Claims Processing</h1>
+          <img 
+            src="/img/Boon logo and word.png" 
+            alt="Boon" 
+            className="h-8 mr-2" 
+          />
+          <h1 className="text-xl font-medium text-[#0f1c2e] ml-1">AI Claims Processing</h1>
         </div>
         <div className="flex items-center gap-4">
           <div className="relative">

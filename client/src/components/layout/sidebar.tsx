@@ -25,12 +25,14 @@ export default function Sidebar({ activePath }: SidebarProps) {
   ];
   
   return (
-    <aside className="w-56 bg-[hsl(155,35%,18%)] flex flex-col h-full">
-      <div className="p-4 border-b border-[hsla(155,35%,25%,0.5)]">
+    <aside className="w-56 bg-[#0f1c2e] flex flex-col h-full">
+      <div className="p-4 border-b border-[rgba(255,255,255,0.1)]">
         <div className="flex items-center">
-          <div className="h-8 w-8 rounded-full bg-[hsl(155,60%,90%)] flex items-center justify-center text-[hsl(155,45%,35%)] font-bold">
-            B
-          </div>
+          <img 
+            src="/img/Boon Logo.png" 
+            alt="Boon" 
+            className="h-8 w-8" 
+          />
           <span className="ml-2 text-white text-lg font-semibold">Boon</span>
         </div>
       </div>
