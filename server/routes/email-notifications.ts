@@ -28,7 +28,7 @@ router.post('/notify/claim-created', async (req: Request, res: Response) => {
         claimId: claim.id,
         type: 'notification',
         description: `Claim creation notification sent to ${recipientEmail}`,
-        user: req.body.user || 'system'
+        createdBy: req.body.createdBy || 'system'
       });
       
       return res.status(200).json({ message: 'Notification sent successfully' });
@@ -65,7 +65,7 @@ router.post('/notify/status-update', async (req: Request, res: Response) => {
         claimId: claim.id,
         type: 'notification',
         description: `Status update notification sent to ${recipientEmail}`,
-        user: req.body.user || 'system'
+        createdBy: req.body.createdBy || 'system'
       });
       
       return res.status(200).json({ message: 'Notification sent successfully' });
@@ -94,6 +94,10 @@ router.post('/notify/task-assigned', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Task not found' });
     }
     
+    if (!task.claimId) {
+      return res.status(400).json({ error: 'Task has no associated claim' });
+    }
+    
     const claim = await storage.getClaim(task.claimId);
     if (!claim) {
       return res.status(404).json({ error: 'Related claim not found' });
@@ -107,7 +111,7 @@ router.post('/notify/task-assigned', async (req: Request, res: Response) => {
         claimId: claim.id,
         type: 'notification',
         description: `Task assignment notification sent to ${assigneeEmail}`,
-        user: req.body.user || 'system'
+        createdBy: req.body.createdBy || 'system'
       });
       
       return res.status(200).json({ message: 'Notification sent successfully' });
@@ -149,7 +153,7 @@ router.post('/notify/document-uploaded', async (req: Request, res: Response) => 
         claimId: claim.id,
         type: 'notification',
         description: `Document upload notification sent to ${recipientEmail}`,
-        user: req.body.user || 'system'
+        createdBy: req.body.createdBy || 'system'
       });
       
       return res.status(200).json({ message: 'Notification sent successfully' });
@@ -226,7 +230,7 @@ router.post('/send-templated', async (req: Request, res: Response) => {
           claimId: Number(templateData.claimId),
           type: 'notification',
           description: `${templateName} email sent to ${recipientEmail}`,
-          user: req.body.user || 'system'
+          createdBy: req.body.createdBy || 'system'
         });
       }
       
