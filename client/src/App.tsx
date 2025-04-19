@@ -47,6 +47,7 @@ function Router() {
           <Route path="/reports" component={Reports} />
           <Route path="/settings" component={Settings} />
           <Route path="/users" component={Users} />
+          <Route path="/search" component={Search} />
           <Route component={NotFound} />
         </Switch>
       </div>
