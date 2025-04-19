@@ -16,6 +16,13 @@ interface ProfileSettings {
   role: string;
 }
 
+interface AppearanceSettings {
+  theme: 'light' | 'dark' | 'system';
+  primaryColor: string;
+  fontSize: number;
+  compactMode: boolean;
+}
+
 export default function Settings() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("account");
@@ -28,17 +35,72 @@ export default function Settings() {
     role: "Claims Administrator"
   });
   
+  // State for appearance settings
+  const [appearanceSettings, setAppearanceSettings] = useState<AppearanceSettings>({
+    theme: 'light',
+    primaryColor: '#2e7d32', // Default Boon green
+    fontSize: 2,
+    compactMode: false
+  });
+  
   // Load saved settings on component mount
   useEffect(() => {
-    const savedSettings = localStorage.getItem('profileSettings');
-    if (savedSettings) {
+    // Load profile settings
+    const savedProfileSettings = localStorage.getItem('profileSettings');
+    if (savedProfileSettings) {
       try {
-        setProfileSettings(JSON.parse(savedSettings));
+        setProfileSettings(JSON.parse(savedProfileSettings));
       } catch (error) {
-        console.error("Error loading saved settings:", error);
+        console.error("Error loading saved profile settings:", error);
+      }
+    }
+    
+    // Load appearance settings
+    const savedAppearanceSettings = localStorage.getItem('appearanceSettings');
+    if (savedAppearanceSettings) {
+      try {
+        setAppearanceSettings(JSON.parse(savedAppearanceSettings));
+      } catch (error) {
+        console.error("Error loading saved appearance settings:", error);
       }
     }
   }, []);
+  
+  // Apply theme settings when they change
+  useEffect(() => {
+    // Apply theme to document root
+    const root = document.documentElement;
+    
+    // Apply theme
+    if (appearanceSettings.theme === 'dark') {
+      root.classList.add('dark');
+    } else if (appearanceSettings.theme === 'light') {
+      root.classList.remove('dark');
+    } else {
+      // System preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDark) {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    }
+    
+    // Apply primary color
+    root.style.setProperty('--primary', appearanceSettings.primaryColor);
+    
+    // Apply font size
+    const fontSizeClass = `font-size-${appearanceSettings.fontSize}`;
+    root.classList.remove('font-size-1', 'font-size-2', 'font-size-3');
+    root.classList.add(fontSizeClass);
+    
+    // Apply density/compact mode
+    if (appearanceSettings.compactMode) {
+      root.classList.add('compact-mode');
+    } else {
+      root.classList.remove('compact-mode');
+    }
+  }, [appearanceSettings]);
   
   // Handle input changes for profile settings
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,17 +111,81 @@ export default function Settings() {
     }));
   };
   
+  // Handle theme selection
+  const handleThemeChange = (theme: 'light' | 'dark' | 'system') => {
+    setAppearanceSettings(prev => ({
+      ...prev,
+      theme
+    }));
+  };
+  
+  // Handle primary color selection
+  const handleColorChange = (color: string) => {
+    setAppearanceSettings(prev => ({
+      ...prev,
+      primaryColor: color
+    }));
+  };
+  
+  // Handle font size change
+  const handleFontSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fontSize = parseInt(e.target.value);
+    setAppearanceSettings(prev => ({
+      ...prev,
+      fontSize
+    }));
+  };
+  
+  // Handle compact mode toggle
+  const handleCompactModeChange = (checked: boolean) => {
+    setAppearanceSettings(prev => ({
+      ...prev,
+      compactMode: checked
+    }));
+  };
+  
+  // Save settings based on active tab
   const handleSaveSettings = () => {
-    // Save profile settings to localStorage
-    localStorage.setItem('profileSettings', JSON.stringify(profileSettings));
-    
-    // Dispatch custom event to notify other components of the update
-    window.dispatchEvent(new Event('profileUpdated'));
+    if (activeTab === 'account') {
+      // Save profile settings to localStorage
+      localStorage.setItem('profileSettings', JSON.stringify(profileSettings));
+      
+      // Dispatch custom event to notify other components of the update
+      window.dispatchEvent(new Event('profileUpdated'));
+    } 
+    else if (activeTab === 'appearance') {
+      // Save appearance settings to localStorage
+      localStorage.setItem('appearanceSettings', JSON.stringify(appearanceSettings));
+      
+      // Apply theme settings
+      applyThemeSettings();
+      
+      // Dispatch custom event for theme update
+      window.dispatchEvent(new Event('themeUpdated'));
+    }
     
     toast({
       title: "Settings Saved",
       description: "Your settings have been updated successfully",
     });
+  };
+  
+  // Apply theme settings function
+  const applyThemeSettings = () => {
+    const root = document.documentElement;
+    
+    // Apply theme (light/dark)
+    if (appearanceSettings.theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else if (appearanceSettings.theme === 'light') {
+      document.documentElement.classList.remove('dark');
+    }
+    
+    // Write to theme.json through API (this would be done in a real app)
+    console.log('Applying theme settings:', appearanceSettings);
+    
+    // Update CSS variables for primary color
+    root.style.setProperty('--primary', appearanceSettings.primaryColor);
   };
   
   return (
@@ -181,15 +307,30 @@ export default function Settings() {
                   <div>
                     <h3 className="text-sm font-medium mb-2">Theme</h3>
                     <div className="grid grid-cols-3 gap-2">
-                      <div className="border rounded-md p-2 flex flex-col items-center space-y-2 cursor-pointer bg-primary bg-opacity-10 border-primary">
+                      <div 
+                        onClick={() => handleThemeChange('light')}
+                        className={`border rounded-md p-2 flex flex-col items-center space-y-2 cursor-pointer ${
+                          appearanceSettings.theme === 'light' ? 'bg-primary bg-opacity-10 border-primary' : ''
+                        }`}
+                      >
                         <div className="w-full h-20 bg-white rounded-md border"></div>
                         <span className="text-xs font-medium">Light</span>
                       </div>
-                      <div className="border rounded-md p-2 flex flex-col items-center space-y-2 cursor-pointer">
+                      <div 
+                        onClick={() => handleThemeChange('dark')}
+                        className={`border rounded-md p-2 flex flex-col items-center space-y-2 cursor-pointer ${
+                          appearanceSettings.theme === 'dark' ? 'bg-primary bg-opacity-10 border-primary' : ''
+                        }`}
+                      >
                         <div className="w-full h-20 bg-neutral-800 rounded-md border"></div>
                         <span className="text-xs font-medium">Dark</span>
                       </div>
-                      <div className="border rounded-md p-2 flex flex-col items-center space-y-2 cursor-pointer">
+                      <div 
+                        onClick={() => handleThemeChange('system')}
+                        className={`border rounded-md p-2 flex flex-col items-center space-y-2 cursor-pointer ${
+                          appearanceSettings.theme === 'system' ? 'bg-primary bg-opacity-10 border-primary' : ''
+                        }`}
+                      >
                         <div className="w-full h-20 bg-gradient-to-b from-white to-neutral-800 rounded-md border"></div>
                         <span className="text-xs font-medium">System</span>
                       </div>
@@ -199,12 +340,29 @@ export default function Settings() {
                   <div className="space-y-2">
                     <h3 className="text-sm font-medium">Primary Color</h3>
                     <div className="grid grid-cols-6 gap-2">
-                      <div className="h-8 w-8 rounded-full bg-blue-600 cursor-pointer ring-2 ring-offset-2 ring-blue-600"></div>
-                      <div className="h-8 w-8 rounded-full bg-green-600 cursor-pointer"></div>
-                      <div className="h-8 w-8 rounded-full bg-red-600 cursor-pointer"></div>
-                      <div className="h-8 w-8 rounded-full bg-purple-600 cursor-pointer"></div>
-                      <div className="h-8 w-8 rounded-full bg-amber-600 cursor-pointer"></div>
-                      <div className="h-8 w-8 rounded-full bg-cyan-600 cursor-pointer"></div>
+                      {[
+                        {color: '#2e7d32', name: 'Boon Green'},
+                        {color: '#1976d2', name: 'Blue'},
+                        {color: '#d32f2f', name: 'Red'},
+                        {color: '#7b1fa2', name: 'Purple'},
+                        {color: '#f57c00', name: 'Amber'},
+                        {color: '#0097a7', name: 'Cyan'},
+                      ].map((colorOption) => (
+                        <div 
+                          key={colorOption.color}
+                          onClick={() => handleColorChange(colorOption.color)}
+                          className={`h-8 w-8 rounded-full cursor-pointer ${
+                            appearanceSettings.primaryColor === colorOption.color 
+                              ? 'ring-2 ring-offset-2' 
+                              : ''
+                          }`}
+                          style={{ 
+                            backgroundColor: colorOption.color,
+                            borderColor: colorOption.color
+                          }}
+                          title={colorOption.name}
+                        />
+                      ))}
                     </div>
                   </div>
                   
@@ -216,7 +374,8 @@ export default function Settings() {
                         type="range" 
                         min="1" 
                         max="3" 
-                        defaultValue="2" 
+                        value={appearanceSettings.fontSize} 
+                        onChange={handleFontSizeChange}
                         className="flex-1" 
                       />
                       <span className="text-lg">A</span>
@@ -228,7 +387,11 @@ export default function Settings() {
                       <Label htmlFor="densityToggle">Compact Mode</Label>
                       <p className="text-sm text-neutral-500">Reduce spacing in tables and UI</p>
                     </div>
-                    <Switch id="densityToggle" />
+                    <Switch 
+                      id="densityToggle" 
+                      checked={appearanceSettings.compactMode}
+                      onCheckedChange={handleCompactModeChange}
+                    />
                   </div>
                 </div>
                 
