@@ -18,6 +18,7 @@ interface SendEmailOptions {
     Name: string;
     Content: string;
     ContentType: string;
+    ContentID?: string;
   }>;
 }
 
@@ -79,7 +80,7 @@ export async function sendClaimCreatedNotification(claim: Claim, recipientEmail:
           </tr>
           <tr>
             <th style="text-align: left; background-color: #f2f2f2; border: 1px solid #ddd;">Date Created</th>
-            <td style="border: 1px solid #ddd;">${new Date(claim.createdAt).toLocaleDateString()}</td>
+            <td style="border: 1px solid #ddd;">${new Date(claim.dateSubmitted).toLocaleDateString()}</td>
           </tr>
           <tr>
             <th style="text-align: left; background-color: #f2f2f2; border: 1px solid #ddd;">Status</th>
@@ -91,7 +92,7 @@ export async function sendClaimCreatedNotification(claim: Claim, recipientEmail:
           </tr>
           <tr>
             <th style="text-align: left; background-color: #f2f2f2; border: 1px solid #ddd;">Description</th>
-            <td style="border: 1px solid #ddd;">${claim.damageDescription || 'N/A'}</td>
+            <td style="border: 1px solid #ddd;">${claim.claimDescription || 'N/A'}</td>
           </tr>
         </table>
         <p>Please log in to the claims management system to view the full details.</p>
@@ -136,7 +137,7 @@ export async function sendClaimStatusUpdateNotification(
           </tr>
           <tr>
             <th style="text-align: left; background-color: #f2f2f2; border: 1px solid #ddd;">Last Updated</th>
-            <td style="border: 1px solid #ddd;">${new Date(claim.updatedAt).toLocaleString()}</td>
+            <td style="border: 1px solid #ddd;">${new Date(claim.dateSubmitted).toLocaleString()}</td>
           </tr>
         </table>
         <p>Please log in to the claims management system to view the full details.</p>
@@ -180,8 +181,8 @@ export async function sendTaskAssignmentNotification(
             <td style="border: 1px solid #ddd;">${task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'Not set'}</td>
           </tr>
           <tr>
-            <th style="text-align: left; background-color: #f2f2f2; border: 1px solid #ddd;">Priority</th>
-            <td style="border: 1px solid #ddd;">${task.priority}</td>
+            <th style="text-align: left; background-color: #f2f2f2; border: 1px solid #ddd;">Status</th>
+            <td style="border: 1px solid #ddd;">${task.status}</td>
           </tr>
           <tr>
             <th style="text-align: left; background-color: #f2f2f2; border: 1px solid #ddd;">Related Claim</th>
@@ -222,11 +223,11 @@ export async function sendDocumentUploadNotification(
           </tr>
           <tr>
             <th style="text-align: left; background-color: #f2f2f2; border: 1px solid #ddd;">Document Type</th>
-            <td style="border: 1px solid #ddd;">${document.documentType || 'Not specified'}</td>
+            <td style="border: 1px solid #ddd;">${document.fileType || 'Not specified'}</td>
           </tr>
           <tr>
             <th style="text-align: left; background-color: #f2f2f2; border: 1px solid #ddd;">Upload Date</th>
-            <td style="border: 1px solid #ddd;">${new Date(document.createdAt).toLocaleString()}</td>
+            <td style="border: 1px solid #ddd;">${new Date(document.uploadedAt).toLocaleString()}</td>
           </tr>
           <tr>
             <th style="text-align: left; background-color: #f2f2f2; border: 1px solid #ddd;">Related Claim</th>
@@ -296,8 +297,8 @@ export async function sendWeeklyClaimSummary(
                 <tr>
                   <td style="border: 1px solid #ddd;">${claim.claimNumber}</td>
                   <td style="border: 1px solid #ddd;">${claim.status}</td>
-                  <td style="border: 1px solid #ddd;">${new Date(claim.createdAt).toLocaleDateString()}</td>
-                  <td style="border: 1px solid #ddd;">${new Date(claim.updatedAt).toLocaleDateString()}</td>
+                  <td style="border: 1px solid #ddd;">${new Date(claim.dateSubmitted).toLocaleDateString()}</td>
+                  <td style="border: 1px solid #ddd;">${new Date(claim.dateSubmitted).toLocaleDateString()}</td>
                 </tr>
               `).join('')}
             </table>
@@ -320,7 +321,7 @@ export async function sendWeeklyClaimSummary(
                 <tr>
                   <td style="border: 1px solid #ddd;">${task.title}</td>
                   <td style="border: 1px solid #ddd;">${task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'Not set'}</td>
-                  <td style="border: 1px solid #ddd;">${task.priority}</td>
+                  <td style="border: 1px solid #ddd;">Normal</td>
                   <td style="border: 1px solid #ddd;">${task.claimId}</td>
                 </tr>
               `).join('')}
