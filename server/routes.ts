@@ -9,6 +9,7 @@ import path from "path";
 import fs from "fs";
 import { analyzePDFDocument, DocumentAnalysisResult } from "./services/openai";
 import { generateClaimInsights, predictClaimOutcome } from "./services/ai-insights";
+import databaseConnectorRoutes from "./routes/database-connector";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes with /api prefix
@@ -845,6 +846,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Register database connector routes
+  app.use('/api/database', databaseConnectorRoutes);
   
   const httpServer = createServer(app);
   return httpServer;
