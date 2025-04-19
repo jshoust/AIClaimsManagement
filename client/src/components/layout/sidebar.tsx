@@ -45,8 +45,8 @@ export default function Sidebar({ activePath }: SidebarProps) {
                 className={cn(
                   "flex items-center px-3 py-2 text-sm rounded-md",
                   activePath === item.path
-                    ? "bg-[hsla(155,45%,90%,0.15)] text-white font-medium"
-                    : "hover:bg-[hsla(155,45%,90%,0.1)] text-[hsl(155,15%,80%)]"
+                    ? "bg-[rgba(255,255,255,0.1)] text-white font-medium"
+                    : "hover:bg-[rgba(255,255,255,0.05)] text-[#a0aec0]"
                 )}
               >
                 <span className="material-icons mr-3 text-current">{item.icon}</span>
@@ -56,10 +56,10 @@ export default function Sidebar({ activePath }: SidebarProps) {
           ))}
         </ul>
       </nav>
-      <div className="p-3 border-t border-[hsla(155,35%,25%,0.5)]">
+      <div className="p-3 border-t border-[rgba(255,255,255,0.1)]">
         <a 
           href="#help" 
-          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-[hsla(155,45%,90%,0.1)] text-[hsl(155,15%,80%)]"
+          className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-[rgba(255,255,255,0.05)] text-[#a0aec0]"
         >
           <span className="material-icons mr-3 text-current">help</span>
           Help & Support

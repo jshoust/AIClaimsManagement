@@ -73,18 +73,18 @@ export default function Dashboard({ onSelectClaim, selectedClaimId }: DashboardP
       <main className="flex-1 overflow-y-auto scrollbar-thin p-6">
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-medium text-neutral-800">Dashboard</h2>
+            <h2 className="text-2xl font-medium text-[#0f1c2e]">Dashboard</h2>
             <div className="flex gap-3">
               <Button 
                 onClick={() => setIsCreateClaimModalOpen(true)}
-                className="flex items-center gap-1 bg-[hsl(155,45%,35%)] hover:bg-[hsl(155,45%,30%)]"
+                className="flex items-center gap-1 bg-[#0f1c2e] hover:bg-[#1a2c45]"
               >
                 <span className="material-icons text-sm">add</span>
                 New Claim
               </Button>
               <Button 
                 variant="outline"
-                className="flex items-center gap-1"
+                className="flex items-center gap-1 border-[#0f1c2e] text-[#0f1c2e] hover:bg-[rgba(15,28,46,0.05)]"
                 onClick={() => {
                   // Refresh all data using React Query's refetch instead of full page reload
                   queryClient.refetchQueries({ queryKey: ['/api/claims'] });
