@@ -248,6 +248,62 @@ export async function sendDocumentUploadNotification(
 }
 
 /**
+ * Send overdue task notification
+ */
+export async function sendOverdueTaskNotification(
+  task: Task,
+  claim: Claim,
+  recipientEmail: string
+): Promise<boolean> {
+  const subject = `OVERDUE Task: ${task.title} for Claim ${claim.claimNumber}`;
+  const daysOverdue = task.dueDate ? 
+    Math.ceil((new Date().getTime() - new Date(task.dueDate).getTime()) / (1000 * 3600 * 24)) : 
+    0;
+  
+  const htmlBody = `
+    <html>
+      <body>
+        <h1 style="color: #D32F2F;">Overdue Task Alert</h1>
+        <p>The following task is <strong>${daysOverdue} days overdue</strong>:</p>
+        <table border="0" cellpadding="5" cellspacing="0" style="border: 1px solid #ddd; border-collapse: collapse;">
+          <tr>
+            <th style="text-align: left; background-color: #f2f2f2; border: 1px solid #ddd;">Task Title</th>
+            <td style="border: 1px solid #ddd;">${task.title}</td>
+          </tr>
+          <tr>
+            <th style="text-align: left; background-color: #f2f2f2; border: 1px solid #ddd;">Description</th>
+            <td style="border: 1px solid #ddd;">${task.description || 'N/A'}</td>
+          </tr>
+          <tr>
+            <th style="text-align: left; background-color: #f2f2f2; border: 1px solid #ddd;">Due Date</th>
+            <td style="border: 1px solid #ddd; color: #D32F2F; font-weight: bold;">${task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'Not set'}</td>
+          </tr>
+          <tr>
+            <th style="text-align: left; background-color: #f2f2f2; border: 1px solid #ddd;">Status</th>
+            <td style="border: 1px solid #ddd;">${task.status}</td>
+          </tr>
+          <tr>
+            <th style="text-align: left; background-color: #f2f2f2; border: 1px solid #ddd;">Related Claim</th>
+            <td style="border: 1px solid #ddd;">${claim.claimNumber}</td>
+          </tr>
+        </table>
+        <p style="margin-top: 20px;">Please log in to the claims management system to update this task as soon as possible.</p>
+        <div style="margin-top: 15px; padding: 10px; background-color: #FFEBEE; border-left: 4px solid #D32F2F;">
+          <p style="margin: 0;">Overdue tasks may cause delays in claim processing and affect customer satisfaction.</p>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to: recipientEmail,
+    subject,
+    htmlBody,
+    tag: 'overdue-task',
+  });
+}
+
+/**
  * Send weekly claim summary report
  */
 export async function sendWeeklyClaimSummary(

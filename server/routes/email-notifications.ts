@@ -125,6 +125,52 @@ router.post('/notify/task-assigned', async (req: Request, res: Response) => {
 });
 
 /**
+ * Send an email notification for overdue tasks
+ */
+router.post('/notify/overdue-task', async (req: Request, res: Response) => {
+  try {
+    const { taskId, recipientEmail } = req.body;
+    
+    if (!taskId || !recipientEmail) {
+      return res.status(400).json({ error: 'taskId and recipientEmail are required' });
+    }
+    
+    const task = await storage.getTask(Number(taskId));
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    
+    if (!task.claimId) {
+      return res.status(400).json({ error: 'Task has no associated claim' });
+    }
+    
+    const claim = await storage.getClaim(task.claimId);
+    if (!claim) {
+      return res.status(404).json({ error: 'Related claim not found' });
+    }
+    
+    const success = await EmailService.sendOverdueTaskNotification(task, claim, recipientEmail);
+    
+    if (success) {
+      // Record this activity
+      await storage.createActivity({
+        claimId: claim.id,
+        type: 'notification',
+        description: `Overdue task notification sent to ${recipientEmail} for task: ${task.title}`,
+        createdBy: req.body.createdBy || 'system'
+      });
+      
+      return res.status(200).json({ message: 'Overdue task notification sent successfully' });
+    } else {
+      return res.status(500).json({ error: 'Failed to send notification' });
+    }
+  } catch (error) {
+    console.error('Error sending overdue task notification:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
  * Send an email notification for a document upload
  */
 router.post('/notify/document-uploaded', async (req: Request, res: Response) => {
@@ -138,6 +184,10 @@ router.post('/notify/document-uploaded', async (req: Request, res: Response) => 
     const document = await storage.getDocument(Number(documentId));
     if (!document) {
       return res.status(404).json({ error: 'Document not found' });
+    }
+    
+    if (!document.claimId) {
+      return res.status(400).json({ error: 'Document has no associated claim' });
     }
     
     const claim = await storage.getClaim(document.claimId);
@@ -240,6 +290,78 @@ router.post('/send-templated', async (req: Request, res: Response) => {
     }
   } catch (error) {
     console.error('Error sending templated email:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * Send notifications for all overdue tasks
+ */
+router.post('/notify/overdue-tasks-batch', async (req: Request, res: Response) => {
+  try {
+    const { assigneeEmail } = req.body;
+    
+    if (!assigneeEmail) {
+      return res.status(400).json({ error: 'assigneeEmail is required' });
+    }
+    
+    // Get all tasks
+    const tasks = await storage.getTasks();
+    
+    // Filter for overdue tasks
+    const overdueTasks = tasks.filter(task => {
+      if (!task.dueDate) return false;
+      return new Date(task.dueDate) < new Date() && task.status !== 'completed';
+    });
+    
+    if (overdueTasks.length === 0) {
+      return res.status(200).json({ 
+        message: 'No overdue tasks found',
+        tasksProcessed: 0 
+      });
+    }
+    
+    const results = await Promise.all(
+      overdueTasks.map(async (task) => {
+        if (!task.claimId) return { taskId: task.id, success: false, error: 'No claim associated with task' };
+        
+        const claim = await storage.getClaim(task.claimId);
+        if (!claim) return { taskId: task.id, success: false, error: 'Related claim not found' };
+        
+        const success = await EmailService.sendOverdueTaskNotification(task, claim, assigneeEmail);
+        
+        if (success) {
+          // Record this activity
+          await storage.createActivity({
+            claimId: claim.id,
+            type: 'notification',
+            description: `Overdue task notification sent to ${assigneeEmail} for task: ${task.title}`,
+            createdBy: req.body.createdBy || 'system'
+          });
+        }
+        
+        return { 
+          taskId: task.id, 
+          success, 
+          claimNumber: claim.claimNumber,
+          title: task.title,
+          dueDate: task.dueDate
+        };
+      })
+    );
+    
+    const successfulNotifications = results.filter(r => r.success);
+    const failedNotifications = results.filter(r => !r.success);
+    
+    return res.status(200).json({
+      message: `Processed ${results.length} overdue tasks`,
+      successful: successfulNotifications.length,
+      failed: failedNotifications.length,
+      successfulTasks: successfulNotifications,
+      failedTasks: failedNotifications
+    });
+  } catch (error) {
+    console.error('Error processing overdue tasks batch:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
