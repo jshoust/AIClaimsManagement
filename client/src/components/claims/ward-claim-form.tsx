@@ -172,7 +172,6 @@ export function WardClaimForm({
           <h1 className="text-2xl font-bold text-primary">Ward Trucking Corp</h1>
           <p className="text-muted-foreground">Freight Claim Form</p>
         </div>
-        <img src="/assets/logo.png" alt="Boon Logo" className="h-16 w-auto" />
       </div>
       
       {/* Missing information alert */}
