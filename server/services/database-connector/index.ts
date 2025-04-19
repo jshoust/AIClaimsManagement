@@ -2,74 +2,46 @@
  * Database connector service
  * Provides unified interface for connecting to and querying external databases
  */
-import { 
-  DatabaseConfig, 
-  ExternalDbConnector,
-  ConnectionTestResult,
-  QueryResult,
-  TableSchema,
-  QueryOptions
-} from './types';
-import { 
-  createSqlServerConnector,
-  createMySqlConnector,
-  createPostgresConnector, 
-  createOracleConnector 
-} from './connectors';
-import { 
-  getDbConfigurations,
-  getDbConfiguration,
-  saveDbConfiguration,
-  updateLastConnected,
-  deleteDbConfiguration
-} from './config-manager';
-import { transformQueryResult } from './result-transformer';
-import { buildQuery } from './query-builder';
 
-// Cache for database connectors
+import { createConnector } from './connectors';
+import * as configManager from './config-manager';
+import { ExternalDbConnector, DatabaseConfig, ConnectionTestResult, TableSchema, QueryOptions, QueryResult } from './types';
+
+// Cache connectors to avoid reconnecting for every query
+// Also helps with connection pooling for supported databases
 const connectorCache: Record<string, { connector: ExternalDbConnector, lastUsed: number }> = {};
-// Timeout for connector cache in milliseconds (30 minutes)
-const CONNECTOR_CACHE_TIMEOUT = 30 * 60 * 1000;
+
+// Time in milliseconds after which a cached connector will be closed (5 minutes)
+const CONNECTOR_EXPIRY_MS = 5 * 60 * 1000;
 
 /**
  * Get a database connector for the specified configuration
  */
 function getConnector(config: DatabaseConfig): ExternalDbConnector {
+  const cacheKey = config.id;
+  const now = Date.now();
+  
   // Check if we have a cached connector
-  if (connectorCache[config.id] && 
-     (Date.now() - connectorCache[config.id].lastUsed) < CONNECTOR_CACHE_TIMEOUT) {
-    // Update the last used timestamp
-    connectorCache[config.id].lastUsed = Date.now();
-    return connectorCache[config.id].connector;
+  if (connectorCache[cacheKey]) {
+    connectorCache[cacheKey].lastUsed = now;
+    return connectorCache[cacheKey].connector;
   }
-
-  // Create a new connector based on the database type
+  
+  // Create a new connector
   let connector: ExternalDbConnector;
-  
-  switch (config.type) {
-    case 'sqlserver':
-      connector = createSqlServerConnector(config);
-      break;
-    case 'mysql':
-      connector = createMySqlConnector(config);
-      break;
-    case 'postgres':
-      connector = createPostgresConnector(config);
-      break;
-    case 'oracle':
-      connector = createOracleConnector(config);
-      break;
-    default:
-      throw new Error(`Unsupported database type: ${config.type}`);
+  try {
+    connector = createConnector(config);
+    connectorCache[cacheKey] = { connector, lastUsed: now };
+    
+    // Update last connected timestamp
+    configManager.updateLastConnected(config.id)
+      .catch(err => console.error(`Failed to update last connected timestamp for ${config.id}:`, err));
+    
+    return connector;
+  } catch (error) {
+    console.error(`Failed to create connector for ${config.name}:`, error);
+    throw new Error(`Failed to create database connector: ${error.message}`);
   }
-  
-  // Cache the connector
-  connectorCache[config.id] = {
-    connector,
-    lastUsed: Date.now()
-  };
-  
-  return connector;
 }
 
 /**
@@ -78,75 +50,59 @@ function getConnector(config: DatabaseConfig): ExternalDbConnector {
 function cleanupConnectorCache() {
   const now = Date.now();
   
-  Object.entries(connectorCache).forEach(async ([id, cache]) => {
-    if ((now - cache.lastUsed) > CONNECTOR_CACHE_TIMEOUT) {
-      // Close the connection
-      try {
-        await cache.connector.close();
-      } catch (error) {
-        console.error(`Error closing connection for ${id}:`, error);
-      }
-      
-      // Remove from cache
-      delete connectorCache[id];
+  Object.entries(connectorCache).forEach(([key, { connector, lastUsed }]) => {
+    if (now - lastUsed > CONNECTOR_EXPIRY_MS) {
+      // Close the connection and remove from cache
+      connector.disconnect()
+        .catch(err => console.error(`Error disconnecting from database ${key}:`, err))
+        .finally(() => {
+          delete connectorCache[key];
+          console.log(`Removed expired connector for ${key} from cache`);
+        });
     }
   });
 }
 
-// Run cache cleanup every 15 minutes
-setInterval(cleanupConnectorCache, 15 * 60 * 1000);
+// Set up periodic cleanup of expired connectors
+setInterval(cleanupConnectorCache, 60 * 1000); // Run every minute
 
 /**
  * Test a database connection
  */
 export async function testConnection(config: DatabaseConfig): Promise<ConnectionTestResult> {
   try {
-    let connector: ExternalDbConnector;
+    const startTime = Date.now();
     
+    // Create a new connector specifically for testing
+    let connector: ExternalDbConnector;
     try {
-      // For test connections, don't use the cache
-      switch (config.type) {
-        case 'sqlserver':
-          connector = createSqlServerConnector(config);
-          break;
-        case 'mysql':
-          connector = createMySqlConnector(config);
-          break;
-        case 'postgres':
-          connector = createPostgresConnector(config);
-          break;
-        case 'oracle':
-          connector = createOracleConnector(config);
-          break;
-        default:
-          return {
-            success: false,
-            message: `Unsupported database type: ${config.type}`
-          };
-      }
-      
-      // Test the connection
-      await connector.testConnection();
-      
-      // Close the connection
-      await connector.close();
-      
-      return {
-        success: true,
-        message: 'Connection successful'
-      };
+      connector = createConnector(config);
     } catch (error) {
       return {
         success: false,
-        message: 'Connection failed',
-        details: error instanceof Error ? error.message : String(error)
+        message: `Failed to create connector: ${error.message}`,
       };
+    }
+    
+    // Test the connection
+    try {
+      const result = await connector.testConnection();
+      const latency = Date.now() - startTime;
+      
+      return {
+        ...result,
+        latency,
+      };
+    } finally {
+      // Always disconnect after testing
+      await connector.disconnect().catch(err => {
+        console.error(`Error disconnecting from database ${config.name}:`, err);
+      });
     }
   } catch (error) {
     return {
       success: false,
-      message: 'An unexpected error occurred',
-      details: error instanceof Error ? error.message : String(error)
+      message: `Connection test failed: ${error.message}`,
     };
   }
 }
@@ -155,49 +111,33 @@ export async function testConnection(config: DatabaseConfig): Promise<Connection
  * Execute a query on a database
  */
 export async function executeQuery(
-  configId: string, 
+  configId: string,
   query: string,
   options?: QueryOptions
 ): Promise<QueryResult> {
+  // Get the database configuration
+  const config = await configManager.getDbConfiguration(configId);
+  if (!config) {
+    throw new Error(`Database configuration not found: ${configId}`);
+  }
+  
+  // Get or create a connector
+  const connector = getConnector(config);
+  
   try {
-    // Get the database configuration
-    const config = await getDbConfiguration(configId);
-    
-    if (!config) {
-      throw new Error(`Database configuration not found: ${configId}`);
-    }
-    
-    // Get the connector
-    const connector = getConnector(config);
-    
-    // Handle query builder if configured
-    if (options?.useQueryBuilder && options.queryBuilderConfig) {
-      query = buildQuery(options.queryBuilderConfig, config.type);
-    }
+    // Connect if not already connected
+    await connector.connect();
     
     // Execute the query
-    const result = await connector.executeQuery(query, options?.parameters);
-    
-    // Update the last connected timestamp
-    await updateLastConnected(configId);
-    
-    // Transform the result if needed
-    if (options?.transformConfig) {
-      return transformQueryResult(result, options.transformConfig);
+    if (options) {
+      // If options are provided, use the query builder
+      return await connector.buildQuery(options);
+    } else {
+      // Otherwise execute the raw query
+      return await connector.executeQuery(query);
     }
-    
-    return result;
   } catch (error) {
-    console.error('Error executing query:', error);
-    
-    // Return an error result
-    return {
-      columns: [],
-      rows: [],
-      metadata: {
-        warnings: [error instanceof Error ? error.message : String(error)]
-      }
-    };
+    throw new Error(`Query execution failed: ${error.message}`);
   }
 }
 
@@ -205,27 +145,23 @@ export async function executeQuery(
  * List tables in a database
  */
 export async function listTables(configId: string): Promise<string[]> {
+  // Get the database configuration
+  const config = await configManager.getDbConfiguration(configId);
+  if (!config) {
+    throw new Error(`Database configuration not found: ${configId}`);
+  }
+  
+  // Get or create a connector
+  const connector = getConnector(config);
+  
   try {
-    // Get the database configuration
-    const config = await getDbConfiguration(configId);
-    
-    if (!config) {
-      throw new Error(`Database configuration not found: ${configId}`);
-    }
-    
-    // Get the connector
-    const connector = getConnector(config);
+    // Connect if not already connected
+    await connector.connect();
     
     // List tables
-    const tables = await connector.listTables();
-    
-    // Update the last connected timestamp
-    await updateLastConnected(configId);
-    
-    return tables;
+    return await connector.listTables();
   } catch (error) {
-    console.error('Error listing tables:', error);
-    throw error;
+    throw new Error(`Failed to list tables: ${error.message}`);
   }
 }
 
@@ -233,34 +169,22 @@ export async function listTables(configId: string): Promise<string[]> {
  * Get schema for a table
  */
 export async function getTableSchema(configId: string, tableName: string): Promise<TableSchema> {
+  // Get the database configuration
+  const config = await configManager.getDbConfiguration(configId);
+  if (!config) {
+    throw new Error(`Database configuration not found: ${configId}`);
+  }
+  
+  // Get or create a connector
+  const connector = getConnector(config);
+  
   try {
-    // Get the database configuration
-    const config = await getDbConfiguration(configId);
-    
-    if (!config) {
-      throw new Error(`Database configuration not found: ${configId}`);
-    }
-    
-    // Get the connector
-    const connector = getConnector(config);
+    // Connect if not already connected
+    await connector.connect();
     
     // Get table schema
-    const schema = await connector.getTableSchema(tableName);
-    
-    // Update the last connected timestamp
-    await updateLastConnected(configId);
-    
-    return schema;
+    return await connector.getTableSchema(tableName);
   } catch (error) {
-    console.error('Error getting table schema:', error);
-    throw error;
+    throw new Error(`Failed to get table schema: ${error.message}`);
   }
 }
-
-// Re-export configuration management functions
-export { 
-  getDbConfigurations,
-  getDbConfiguration,
-  saveDbConfiguration,
-  deleteDbConfiguration
-};

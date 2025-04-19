@@ -1,139 +1,183 @@
 /**
  * Result transformer for query results
  */
-import { QueryResult, TransformConfig, FilterCondition, DateFormatConfig } from './types';
-import { format as formatDate } from 'date-fns';
+import { QueryResult } from './types';
 
 /**
- * Transform a query result based on the provided configuration
+ * Transform a query result based on configuration options
  */
-export function transformQueryResult(result: QueryResult, config?: TransformConfig): QueryResult {
-  if (!config) {
-    return result;
+export function transformQueryResult(
+  result: QueryResult,
+  transformOptions: {
+    filter?: Record<string, any>;
+    formatDates?: Record<string, string>;
+    formatNumbers?: Record<string, string>;
+    excludeColumns?: string[];
+    includeColumns?: string[];
+    limitRows?: number;
+    mapColumnNames?: Record<string, string>;
+  } = {}
+): QueryResult {
+  let { rows, columns, rowCount, metadata } = result;
+  
+  // Apply column filtering (include/exclude)
+  if (transformOptions.includeColumns?.length) {
+    // Only keep specified columns
+    const newColumns = columns.filter(col => transformOptions.includeColumns?.includes(col));
+    rows = rows.map(row => {
+      const newRow: Record<string, any> = {};
+      newColumns.forEach(col => {
+        newRow[col] = row[col];
+      });
+      return newRow;
+    });
+    columns = newColumns;
+  } else if (transformOptions.excludeColumns?.length) {
+    // Remove specified columns
+    const newColumns = columns.filter(col => !transformOptions.excludeColumns?.includes(col));
+    rows = rows.map(row => {
+      const newRow: Record<string, any> = {};
+      newColumns.forEach(col => {
+        newRow[col] = row[col];
+      });
+      return newRow;
+    });
+    columns = newColumns;
   }
   
-  let transformedResult = { ...result };
-  
-  // Apply filtering if configured
-  if (config.filterConditions && config.filterConditions.length > 0) {
-    transformedResult.rows = filterRows(transformedResult.rows, config.filterConditions);
-    
-    // Update metadata if available
-    if (transformedResult.metadata) {
-      transformedResult.metadata.totalRows = transformedResult.rows.length;
-    }
-  }
-  
-  // Apply date formatting if configured
-  if (config.dateFormatOptions && config.dateFormatOptions.length > 0) {
-    transformedResult.rows = formatDates(transformedResult.rows, config.dateFormatOptions);
-  }
-  
-  // Apply sorting if configured
-  if (config.sortOptions && config.sortOptions.length > 0) {
-    transformedResult.rows.sort((a, b) => {
-      for (const sort of config.sortOptions || []) {
-        const fieldA = a[sort.field];
-        const fieldB = b[sort.field];
+  // Apply row filtering
+  if (transformOptions.filter && Object.keys(transformOptions.filter).length > 0) {
+    rows = rows.filter(row => {
+      return Object.entries(transformOptions.filter || {}).every(([key, value]) => {
+        // Skip if the column doesn't exist
+        if (row[key] === undefined) return true;
         
-        // Skip if both values are undefined
-        if (fieldA === undefined && fieldB === undefined) {
-          continue;
+        // Simple equality check
+        if (typeof value !== 'object') {
+          return row[key] === value;
         }
         
-        // Handle nulls (null values come last)
-        if (fieldA === null && fieldB !== null) return sort.direction === 'asc' ? 1 : -1;
-        if (fieldA !== null && fieldB === null) return sort.direction === 'asc' ? -1 : 1;
+        // Complex conditions
+        if (value.$eq !== undefined) return row[key] === value.$eq;
+        if (value.$ne !== undefined) return row[key] !== value.$ne;
+        if (value.$gt !== undefined) return row[key] > value.$gt;
+        if (value.$gte !== undefined) return row[key] >= value.$gte;
+        if (value.$lt !== undefined) return row[key] < value.$lt;
+        if (value.$lte !== undefined) return row[key] <= value.$lte;
+        if (value.$in !== undefined) return Array.isArray(value.$in) && value.$in.includes(row[key]);
+        if (value.$nin !== undefined) return Array.isArray(value.$nin) && !value.$nin.includes(row[key]);
+        if (value.$contains !== undefined && typeof row[key] === 'string') 
+          return row[key].includes(String(value.$contains));
+        if (value.$startsWith !== undefined && typeof row[key] === 'string') 
+          return row[key].startsWith(String(value.$startsWith));
+        if (value.$endsWith !== undefined && typeof row[key] === 'string') 
+          return row[key].endsWith(String(value.$endsWith));
         
-        // Regular comparison
-        if (fieldA < fieldB) return sort.direction === 'asc' ? -1 : 1;
-        if (fieldA > fieldB) return sort.direction === 'asc' ? 1 : -1;
-      }
-      return 0;
+        return true;
+      });
     });
   }
   
-  // Apply pagination if configured
-  if (config.pagination) {
-    const { limit, offset } = config.pagination;
-    transformedResult.rows = transformedResult.rows.slice(offset, offset + limit);
+  // Apply row limit
+  if (transformOptions.limitRows !== undefined && transformOptions.limitRows >= 0) {
+    rows = rows.slice(0, transformOptions.limitRows);
   }
   
-  return transformedResult;
-}
-
-/**
- * Filter rows based on filter conditions
- */
-function filterRows(rows: any[], filterConditions: FilterCondition[]): any[] {
-  return rows.filter(row => {
-    return filterConditions.every(condition => {
-      const fieldValue = row[condition.field];
+  // Format dates and numbers
+  if (transformOptions.formatDates || transformOptions.formatNumbers) {
+    rows = rows.map(row => {
+      const newRow = { ...row };
       
-      // Handle null values
-      if (fieldValue === null || fieldValue === undefined) {
-        return false;
+      // Format dates
+      if (transformOptions.formatDates) {
+        Object.entries(transformOptions.formatDates).forEach(([column, format]) => {
+          if (newRow[column] && newRow[column] instanceof Date) {
+            // Simple date formatting - in a real implementation would use a library like date-fns
+            newRow[column] = formatDate(newRow[column], format);
+          }
+        });
       }
       
-      switch (condition.operator) {
-        case 'equals':
-          return fieldValue === condition.value;
-          
-        case 'notEquals':
-          return fieldValue !== condition.value;
-          
-        case 'contains':
-          return String(fieldValue).toLowerCase().includes(String(condition.value).toLowerCase());
-          
-        case 'greaterThan':
-          return fieldValue > condition.value;
-          
-        case 'lessThan':
-          return fieldValue < condition.value;
-          
-        case 'in':
-          return Array.isArray(condition.value) && condition.value.includes(fieldValue);
-          
-        case 'between':
-          return Array.isArray(condition.value) && 
-            fieldValue >= condition.value[0] && 
-            fieldValue <= condition.value[1];
-            
-        default:
-          return true;
+      // Format numbers
+      if (transformOptions.formatNumbers) {
+        Object.entries(transformOptions.formatNumbers).forEach(([column, format]) => {
+          if (typeof newRow[column] === 'number') {
+            // Simple number formatting - in a real implementation would use more robust formatting
+            newRow[column] = formatNumber(newRow[column], format);
+          }
+        });
       }
+      
+      return newRow;
     });
-  });
-}
-
-/**
- * Format date fields based on format configuration
- */
-function formatDates(rows: any[], dateFormatConfigs: DateFormatConfig[]): any[] {
-  return rows.map(row => {
-    const formattedRow = { ...row };
+  }
+  
+  // Rename columns
+  if (transformOptions.mapColumnNames && Object.keys(transformOptions.mapColumnNames).length > 0) {
+    const columnMap = transformOptions.mapColumnNames;
+    const newColumns = columns.map(col => columnMap[col] || col);
     
-    dateFormatConfigs.forEach(config => {
-      const value = row[config.field];
-      
-      if (value && (value instanceof Date || !isNaN(new Date(value).getTime()))) {
-        const dateObj = value instanceof Date ? value : new Date(value);
-        formattedRow[config.field] = formatDateValue(dateObj, config.format);
-      }
+    rows = rows.map(row => {
+      const newRow: Record<string, any> = {};
+      Object.keys(row).forEach(key => {
+        const newKey = columnMap[key] || key;
+        newRow[newKey] = row[key];
+      });
+      return newRow;
     });
     
-    return formattedRow;
-  });
+    columns = newColumns;
+  }
+  
+  return {
+    columns,
+    rows,
+    rowCount: rows.length,
+    metadata
+  };
 }
 
 /**
- * Format a date according to the specified format string
+ * Simple date formatter
  */
-function formatDateValue(date: Date, format: string): string {
-  try {
-    return formatDate(date, format);
-  } catch (error) {
-    console.error('Error formatting date:', error);
-    return date.toISOString();
+function formatDate(date: Date, format: string): string {
+  // Very basic implementation - in a real app would use date-fns or similar
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  
+  // Replace tokens in format string
+  return format
+    .replace('YYYY', String(year))
+    .replace('MM', month)
+    .replace('DD', day)
+    .replace('HH', hours)
+    .replace('mm', minutes)
+    .replace('ss', seconds);
+}
+
+/**
+ * Simple number formatter
+ */
+function formatNumber(num: number, format: string): string {
+  // Very basic implementation - in a real app would use a proper number formatting library
+  switch (format.toLowerCase()) {
+    case 'currency':
+      return `$${num.toFixed(2)}`;
+    case 'percent':
+      return `${(num * 100).toFixed(2)}%`;
+    case 'integer':
+      return Math.round(num).toString();
+    case 'decimal1':
+      return num.toFixed(1);
+    case 'decimal2':
+      return num.toFixed(2);
+    case 'decimal3':
+      return num.toFixed(3);
+    default:
+      return num.toString();
   }
 }

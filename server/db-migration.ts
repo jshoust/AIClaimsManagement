@@ -41,16 +41,18 @@ export async function runMigrations() {
 }
 
 /**
- * Run this function to migrate the database
+ * Run this function to migrate the database directly
+ * when executed as a script
  */
-if (require.main === module) {
-  runMigrations()
-    .then(() => {
-      console.log('Migrations completed, exiting...');
-      process.exit(0);
-    })
-    .catch(error => {
-      console.error('Migration failed:', error);
-      process.exit(1);
-    });
+// This is for ES modules - we don't use the direct script execution
+// but keep the function for programmatic access
+export async function migrateDatabase() {
+  try {
+    await runMigrations();
+    console.log('Migrations completed successfully');
+    return true;
+  } catch (error) {
+    console.error('Migration failed:', error);
+    return false;
+  }
 }

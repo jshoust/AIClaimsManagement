@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
 import { seedDatabase } from "./seed-db";
+import { runMigrations } from "./db-migration";
 
 const app = express();
 app.use(express.json());
@@ -45,11 +46,15 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Attempt to seed the database with initial data if needed
   try {
+    // Run database migrations first
+    await runMigrations();
+    console.log("Database migrations completed successfully");
+    
+    // Then seed the database with initial data if needed
     await seedDatabase();
   } catch (error) {
-    console.error("Failed to seed database:", error);
+    console.error("Failed to initialize database:", error);
   }
 
   const server = await registerRoutes(app);
