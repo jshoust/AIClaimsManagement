@@ -58,4 +58,48 @@
     color: var(--primary);
     border-color: var(--primary);
   }
+  
+  /* Improved toggle button styling */
+  [data-state="checked"] {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+  }
+  
+  [data-state="unchecked"] {
+    background-color: #e2e2e2 !important;
+    border: 1px solid #c0c0c0 !important;
+  }
+  
+  /* Enhanced Switch component styling */
+  .dark [role="switch"][data-state="checked"] {
+    background-color: var(--primary) !important;
+  }
+  
+  [role="switch"][data-state="checked"] {
+    background-color: var(--primary) !important;
+  }
+  
+  [role="switch"][data-state="unchecked"] {
+    background-color: #c0c0c0 !important;
+    border: 1px solid #aaaaaa !important;
+  }
+  
+  /* Thumb styling for switch */
+  [role="switch"] span {
+    background-color: white !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;
+  }
+  
+  /* Improved tab styling for better visibility */
+  [role="tab"][data-state="inactive"] {
+    background-color: #f0f0f0;
+    color: #606060;
+    font-weight: 500;
+  }
+  
+  [role="tab"][data-state="active"] {
+    background-color: var(--primary);
+    color: white;
+    font-weight: 600;
+  }
 }
