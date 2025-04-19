@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, date, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -149,6 +149,32 @@ export const insertStateLawSchema = createInsertSchema(stateLaws).omit({
   id: true,
 });
 
+// External Databases table
+export const externalDatabases = pgTable("external_databases", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: varchar("type", { length: 20 }).notNull(), // sqlserver, mysql, postgres, oracle
+  host: text("host").notNull(),
+  port: integer("port").notNull(),
+  database: text("database").notNull(),
+  schema: text("schema"),
+  credentials: text("credentials").notNull(), // JSON string with username, password, etc.
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  lastConnected: timestamp("last_connected"),
+  tags: text("tags"), // JSON array of string tags
+  isActive: boolean("is_active").notNull().default(true),
+  createdBy: text("created_by").notNull(),
+});
+
+export const insertExternalDatabaseSchema = createInsertSchema(externalDatabases).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastConnected: true,
+});
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -170,6 +196,9 @@ export type InsertEmailTemplate = z.infer<typeof insertEmailTemplateSchema>;
 
 export type StateLaw = typeof stateLaws.$inferSelect;
 export type InsertStateLaw = z.infer<typeof insertStateLawSchema>;
+
+export type ExternalDatabase = typeof externalDatabases.$inferSelect;
+export type InsertExternalDatabase = z.infer<typeof insertExternalDatabaseSchema>;
 
 // Claim status enum
 export const ClaimStatus = {
