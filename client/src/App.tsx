@@ -13,6 +13,7 @@ import Documents from "@/pages/documents";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import Users from "@/pages/users";
+import Search from "@/pages/search";
 import AppHeader from "@/components/layout/app-header";
 import Sidebar from "@/components/layout/sidebar";
 import { useLocation } from "wouter";

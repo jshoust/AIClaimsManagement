@@ -27,6 +27,15 @@ export default function Settings() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("account");
   
+  // Get tab from URL query parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam && ['account', 'appearance', 'notifications', 'system'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, []);
+  
   // State for profile information
   const [profileSettings, setProfileSettings] = useState<ProfileSettings>({
     fullName: "John Doe",

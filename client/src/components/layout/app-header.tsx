@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -9,8 +9,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User, Settings, HelpCircle } from "lucide-react";
-import { Link } from "wouter";
+import { LogOut, User, Settings, HelpCircle, Search } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 // Profile settings interface matches what's used in settings.tsx
 interface ProfileSettings {
@@ -21,10 +22,40 @@ interface ProfileSettings {
 }
 
 export default function AppHeader() {
+  const { toast } = useToast();
+  const [location, setLocation] = useLocation();
+  const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState({
     name: "John Doe",
     initials: "JD"
   });
+  
+  // Handle search submission
+  const handleSearch = (e: FormEvent) => {
+    e.preventDefault();
+    
+    if (!searchQuery.trim()) {
+      toast({
+        title: "Search Error",
+        description: "Please enter a search term",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Navigate to search results page with query parameter
+    setLocation(`/search?q=${encodeURIComponent(searchQuery)}`);
+    
+    toast({
+      title: "Searching...",
+      description: `Searching for "${searchQuery}"`,
+    });
+  };
+  
+  // Navigate to page via dropdown
+  const navigateTo = (path: string) => {
+    setLocation(path);
+  };
   
   // Handle logout
   const handleLogout = () => {
@@ -37,8 +68,14 @@ export default function AppHeader() {
       initials: "JD"
     });
     
-    // Show logout confirmation
-    alert("You have been logged out successfully.");
+    // Show logout confirmation via toast
+    toast({
+      title: "Logged Out",
+      description: "You have been logged out successfully."
+    });
+    
+    // Navigate to login page (or home in this case)
+    setLocation('/');
   };
   
   // Function to load profile settings from localStorage
@@ -98,14 +135,22 @@ export default function AppHeader() {
           <h1 className="text-xl font-medium text-[#2e7d32] ml-1">AI Claims Processing</h1>
         </div>
         <div className="flex items-center gap-4">
-          <div className="relative">
+          <form onSubmit={handleSearch} className="relative">
             <Input
               type="text"
               placeholder="Search claims, contacts..."
               className="bg-neutral-100 px-4 py-2 rounded-md text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <span className="material-icons absolute right-2 top-2 text-neutral-400">search</span>
-          </div>
+            <button 
+              type="submit" 
+              className="absolute right-2 top-2 text-neutral-400 bg-transparent border-none cursor-pointer"
+              aria-label="Search"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+          </form>
           <Button variant="ghost" size="icon" className="rounded-full">
             <span className="material-icons text-neutral-500">notifications</span>
           </Button>
@@ -122,18 +167,20 @@ export default function AppHeader() {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <Link href="/settings">
-                <DropdownMenuItem className="cursor-pointer">
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </DropdownMenuItem>
-              </Link>
-              <Link href="/settings">
-                <DropdownMenuItem className="cursor-pointer">
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
-              </Link>
+              <DropdownMenuItem 
+                className="cursor-pointer" 
+                onClick={() => navigateTo('/settings')}
+              >
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="cursor-pointer"
+                onClick={() => navigateTo('/settings?tab=appearance')}
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </DropdownMenuItem>
               <DropdownMenuItem className="cursor-pointer">
                 <HelpCircle className="mr-2 h-4 w-4" />
                 <span>Help & Support</span>
