@@ -108,9 +108,9 @@ export default function Dashboard({ onSelectClaim, selectedClaimId }: DashboardP
             <SummaryCard
               title="Total Claims"
               value={summaryStats.totalClaims}
-              icon={<span className="material-icons text-[hsl(155,45%,35%)]">description</span>}
+              icon={<span className="material-icons text-[#0f1c2e]">description</span>}
               change={{ value: "3.2%", isPositive: true }}
-              iconColor="bg-[hsl(155,45%,95%)]"
+              iconColor="bg-[rgba(15,28,46,0.1)]"
             />
             
             <SummaryCard
