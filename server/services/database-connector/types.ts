@@ -1,88 +1,99 @@
 /**
- * Type definitions for database connector
+ * Type definitions for database connector functionality
  */
 
 // Supported database types
-export type DatabaseType = 'mysql' | 'postgres' | 'sqlserver' | 'oracle';
+export type DatabaseType = 'postgres' | 'mysql' | 'sqlserver' | 'oracle';
 
-// Database configuration
+// Configuration for a database connection
 export interface DatabaseConfig {
   id: string;
   name: string;
-  description?: string;
+  description: string;
   type: DatabaseType;
   host: string;
   port: number;
   database: string;
   schema?: string;
-  credentials: string; // JSON string with username and password
+  credentials: string; // encrypted credentials
   createdAt: string;
   updatedAt: string;
   lastConnected?: string;
-  tags: string | null;
+  tags: string | string[] | null; // can be comma-separated string, array, or null
   isActive: boolean;
   createdBy: string;
+  
+  // Additional properties for connection testing and creation but not stored
+  username?: string;
+  user?: string;
+  password?: string;
+  ssl?: boolean;
+  rejectUnauthorized?: boolean;
 }
 
-// Connection test result
+// Result of a database connection test
 export interface ConnectionTestResult {
   success: boolean;
   message: string;
-  details?: Record<string, any>;
   latency?: number;
+  serverInfo?: Record<string, any>;
 }
 
-// Table schema definition
-export interface TableColumn {
-  name: string;
-  type: string;
-  nullable: boolean;
-  isPrimaryKey: boolean;
-  isAutoIncrement?: boolean;
-  defaultValue?: string;
-  comment?: string;
-}
-
-// Table schema
-export interface TableSchema {
-  tableName: string;
-  columns: TableColumn[];
-  primaryKeys: string[];
-  foreignKeys?: { 
-    columnName: string; 
-    referencedTable: string; 
-    referencedColumn: string 
-  }[];
-}
-
-// Query results
+// Result of a database query
 export interface QueryResult {
   columns: string[];
   rows: Record<string, any>[];
   rowCount: number;
-  metadata?: {
+  metadata: {
     executionTime: number;
     query: string;
   };
 }
 
-// Query options for the query builder
+// Options for building a query
 export interface QueryOptions {
   table: string;
   columns?: string[];
   where?: Record<string, any>;
-  orderBy?: Array<{ column: string; direction: 'asc' | 'desc' }>;
+  orderBy?: Array<{
+    column: string;
+    direction: 'asc' | 'desc';
+  }>;
   limit?: number;
   offset?: number;
 }
 
-// External database connector interface
+// Schema information for a table
+export interface TableSchema {
+  tableName: string;
+  columns: Array<{
+    name: string;
+    type: string;
+    nullable: boolean;
+    isPrimaryKey: boolean;
+    isForeignKey: boolean;
+    defaultValue?: any;
+  }>;
+  primaryKey?: string[];
+  foreignKeys?: Array<{
+    column: string;
+    referencedTable: string;
+    referencedColumn: string;
+  }>;
+  indexes?: Array<{
+    name: string;
+    columns: string[];
+    isUnique: boolean;
+  }>;
+}
+
+// Interface for database connectors
 export interface ExternalDbConnector {
   connect(): Promise<void>;
   disconnect(): Promise<void>;
   testConnection(): Promise<ConnectionTestResult>;
   executeQuery(query: string, params?: any[]): Promise<QueryResult>;
+  buildQuery(options: QueryOptions): Promise<QueryResult>;
   listTables(): Promise<string[]>;
   getTableSchema(tableName: string): Promise<TableSchema>;
-  buildQuery(options: QueryOptions): Promise<QueryResult>;
 }

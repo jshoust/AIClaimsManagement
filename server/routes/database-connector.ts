@@ -1,244 +1,276 @@
 /**
- * API routes for external database connections
+ * API routes for the database connector
  */
-import { Router, Request, Response } from 'express';
-import { z } from 'zod';
+import express, { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import * as configManager from '../services/database-connector/config-manager';
-import * as databaseConnector from '../services/database-connector';
-import { DatabaseConfig, ConnectionTestResult, TableSchema, QueryOptions } from '../services/database-connector/types';
+import { z } from 'zod';
+import { fromZodError } from 'zod-validation-error';
+import { 
+  testDatabaseConnection,
+  getDatabaseConfigurations,
+  getDatabaseConfiguration,
+  saveDatabaseConfiguration,
+  deleteDatabaseConfiguration,
+  listDatabaseTables,
+  getTableSchema,
+  executeQuery,
+  buildAndExecuteQuery
+} from '../services/database-connector';
+import { QueryOptions } from '../services/database-connector/types';
 
-const router = Router();
+const router = express.Router();
 
-/**
- * Get all external database configurations
- */
-router.get('/connections', async (_req: Request, res: Response) => {
+// Schema for database connection validation
+const databaseConnectionSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  type: z.enum(["mysql", "postgres", "sqlserver", "oracle"], {
+    required_error: "Please select a database type",
+  }),
+  host: z.string().min(1, "Host is required"),
+  port: z.number({
+    required_error: "Port is required",
+    invalid_type_error: "Port must be a number",
+  }).int().positive(),
+  database: z.string().min(1, "Database name is required"),
+  schema: z.string().optional(),
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
+  ssl: z.boolean().optional(),
+  rejectUnauthorized: z.boolean().optional(),
+  tags: z.array(z.string()).optional()
+});
+
+// Get all database connections
+router.get('/connections', async (req: Request, res: Response) => {
   try {
-    const configs = await configManager.getDbConfigurations();
-    return res.json(configs);
+    const connections = await getDatabaseConfigurations();
+    
+    // Don't send credentials in the response for security
+    const sanitizedConnections = connections.map(conn => ({
+      ...conn,
+      credentials: undefined
+    }));
+    
+    res.json(sanitizedConnections);
   } catch (error) {
-    console.error('Error fetching database configurations:', error);
-    return res.status(500).json({ error: 'Failed to fetch database configurations' });
+    console.error('Error fetching database connections:', error);
+    res.status(500).json({ 
+      message: "Failed to fetch database connections", 
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
 });
 
-/**
- * Get a specific database configuration
- */
+// Get a specific database connection
 router.get('/connections/:id', async (req: Request, res: Response) => {
   try {
-    const config = await configManager.getDbConfiguration(req.params.id);
-    if (!config) {
-      return res.status(404).json({ error: 'Database configuration not found' });
+    const id = req.params.id;
+    const connection = await getDatabaseConfiguration(id);
+    
+    if (!connection) {
+      return res.status(404).json({ message: "Database connection not found" });
     }
-    return res.json(config);
+    
+    // Don't send credentials in the response for security
+    const { credentials, ...sanitizedConnection } = connection;
+    
+    res.json(sanitizedConnection);
   } catch (error) {
-    console.error('Error fetching database configuration:', error);
-    return res.status(500).json({ error: 'Failed to fetch database configuration' });
+    res.status(500).json({ 
+      message: "Failed to fetch database connection", 
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
 });
 
-/**
- * Validation schema for database connection
- */
-const dbConnectionSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  description: z.string().optional(),
-  type: z.enum(['mysql', 'postgres', 'sqlserver', 'oracle']),
-  host: z.string().min(1, 'Host is required'),
-  port: z.number().int().positive('Port must be a positive integer'),
-  database: z.string().min(1, 'Database name is required'),
-  schema: z.string().optional(),
-  username: z.string().min(1, 'Username is required'),
-  password: z.string(),
-  tags: z.array(z.string()).optional(),
-  isActive: z.boolean().default(true),
-  createdBy: z.string().default('admin')
-});
-
-/**
- * Create a new database connection
- */
+// Create a new database connection
 router.post('/connections', async (req: Request, res: Response) => {
   try {
-    const validation = dbConnectionSchema.safeParse(req.body);
+    const validatedData = databaseConnectionSchema.parse(req.body);
     
-    if (!validation.success) {
-      return res.status(400).json({ error: 'Invalid data', details: validation.error.format() });
-    }
-    
-    const { username, password, tags, ...rest } = validation.data;
-    
-    // Store password securely (encrypted in a real-world scenario)
-    const credentials = JSON.stringify({ username, password });
-    
-    const newConnection: DatabaseConfig = {
+    const newConnection = await saveDatabaseConfiguration({
       id: uuidv4(),
-      credentials,
-      tags: tags ? tags.join(',') : null,
-      ...rest,
+      ...validatedData,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+      updatedAt: new Date().toISOString(),
+      isActive: true,
+      createdBy: req.body.createdBy || req.body.username || 'system'
+    });
     
-    const savedConfig = await configManager.saveDbConfiguration(newConnection);
-    return res.status(201).json(savedConfig);
+    // Don't send credentials in the response
+    const { credentials, ...sanitizedConnection } = newConnection;
+    
+    res.status(201).json(sanitizedConnection);
   } catch (error) {
-    console.error('Error creating database connection:', error);
-    return res.status(500).json({ error: 'Failed to create database connection' });
-  }
-});
-
-/**
- * Update an existing database connection
- */
-router.put('/connections/:id', async (req: Request, res: Response) => {
-  try {
-    const existingConfig = await configManager.getDbConfiguration(req.params.id);
-    
-    if (!existingConfig) {
-      return res.status(404).json({ error: 'Database configuration not found' });
-    }
-    
-    const validation = dbConnectionSchema.partial().safeParse(req.body);
-    
-    if (!validation.success) {
-      return res.status(400).json({ error: 'Invalid data', details: validation.error.format() });
-    }
-    
-    const { username, password, tags, ...rest } = validation.data;
-    
-    // Get existing credentials
-    let credentials = existingConfig.credentials;
-    
-    // If either username or password is provided, update credentials
-    if (username || password) {
-      const existingCreds = JSON.parse(existingConfig.credentials);
-      credentials = JSON.stringify({
-        username: username || existingCreds.username,
-        password: password || existingCreds.password
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ 
+        message: "Invalid database connection data", 
+        errors: fromZodError(error).message 
       });
     }
     
-    const updatedConnection: DatabaseConfig = {
-      ...existingConfig,
-      ...rest,
-      credentials,
-      tags: tags ? tags.join(',') : existingConfig.tags,
-      updatedAt: new Date().toISOString()
-    };
-    
-    const savedConfig = await configManager.saveDbConfiguration(updatedConnection);
-    return res.json(savedConfig);
-  } catch (error) {
-    console.error('Error updating database connection:', error);
-    return res.status(500).json({ error: 'Failed to update database connection' });
+    res.status(500).json({ 
+      message: "Failed to create database connection", 
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
 });
 
-/**
- * Test a database connection
- */
-router.post('/connections/test', async (req: Request, res: Response) => {
+// Update an existing database connection
+router.put('/connections/:id', async (req: Request, res: Response) => {
   try {
-    const validation = dbConnectionSchema.safeParse(req.body);
+    const id = req.params.id;
+    const existingConnection = await getDatabaseConfiguration(id);
     
-    if (!validation.success) {
-      return res.status(400).json({ error: 'Invalid data', details: validation.error.format() });
+    if (!existingConnection) {
+      return res.status(404).json({ message: "Database connection not found" });
     }
     
-    const { username, password, tags, ...rest } = validation.data;
+    const validatedData = databaseConnectionSchema.parse(req.body);
     
-    const testConfig: DatabaseConfig = {
-      id: 'test',
-      credentials: JSON.stringify({ username, password }),
-      tags: tags ? tags.join(',') : null,
-      ...rest,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    const result = await databaseConnector.testConnection(testConfig);
-    return res.json(result);
-  } catch (error) {
-    console.error('Error testing database connection:', error);
-    return res.status(500).json({ error: 'Failed to test database connection' });
-  }
-});
-
-/**
- * List tables for a specific database connection
- */
-router.get('/connections/:id/tables', async (req: Request, res: Response) => {
-  try {
-    const tables = await databaseConnector.listTables(req.params.id);
-    return res.json(tables);
-  } catch (error) {
-    console.error('Error listing tables:', error);
-    return res.status(500).json({ error: 'Failed to list tables' });
-  }
-});
-
-/**
- * Get schema for a specific table
- */
-router.get('/connections/:id/tables/:tableName/schema', async (req: Request, res: Response) => {
-  try {
-    const schema = await databaseConnector.getTableSchema(req.params.id, req.params.tableName);
-    return res.json(schema);
-  } catch (error) {
-    console.error('Error getting table schema:', error);
-    return res.status(500).json({ error: 'Failed to get table schema' });
-  }
-});
-
-/**
- * Execute a query on a specific database connection
- */
-router.post('/connections/:id/query', async (req: Request, res: Response) => {
-  try {
-    const { query } = req.body;
-    
-    if (!query) {
-      return res.status(400).json({ error: 'Query is required' });
-    }
-    
-    const result = await databaseConnector.executeQuery(req.params.id, query);
-    return res.json(result);
-  } catch (error) {
-    console.error('Error executing query:', error);
-    return res.status(500).json({ error: 'Failed to execute query' });
-  }
-});
-
-/**
- * Execute a query using the query builder
- */
-router.post('/connections/:id/query-builder', async (req: Request, res: Response) => {
-  try {
-    const validationSchema = z.object({
-      table: z.string(),
-      columns: z.array(z.string()).optional(),
-      where: z.record(z.any()).optional(),
-      orderBy: z.array(z.object({ column: z.string(), direction: z.enum(['asc', 'desc']) })).optional(),
-      limit: z.number().int().positive().optional(),
-      offset: z.number().int().min(0).optional()
+    const updatedConnection = await saveDatabaseConfiguration({
+      id,
+      ...validatedData,
+      updatedAt: new Date().toISOString(),
+      createdAt: existingConnection.createdAt,
+      lastConnected: existingConnection.lastConnected
     });
     
-    const validation = validationSchema.safeParse(req.body);
+    // Don't send credentials in the response
+    const { credentials, ...sanitizedConnection } = updatedConnection;
     
-    if (!validation.success) {
-      return res.status(400).json({ error: 'Invalid query options', details: validation.error.format() });
+    res.json(sanitizedConnection);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ 
+        message: "Invalid database connection data", 
+        errors: fromZodError(error).message 
+      });
     }
     
-    const queryOptions: QueryOptions = validation.data;
+    res.status(500).json({ 
+      message: "Failed to update database connection", 
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+// Delete a database connection
+router.delete('/connections/:id', async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
+    const success = await deleteDatabaseConfiguration(id);
     
-    const result = await databaseConnector.executeQuery(req.params.id, '', queryOptions);
-    return res.json(result);
+    if (!success) {
+      return res.status(404).json({ message: "Database connection not found" });
+    }
+    
+    res.json({ success: true, message: "Database connection deleted successfully" });
   } catch (error) {
-    console.error('Error executing query:', error);
-    return res.status(500).json({ error: 'Failed to execute query' });
+    res.status(500).json({ 
+      message: "Failed to delete database connection", 
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+// Test a database connection
+router.post('/connections/test', async (req: Request, res: Response) => {
+  try {
+    // Validate connection details
+    const validatedData = databaseConnectionSchema.parse(req.body);
+    
+    // Test the connection
+    const result = await testDatabaseConnection(validatedData);
+    
+    res.json(result);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ 
+        message: "Invalid database connection data", 
+        errors: fromZodError(error).message 
+      });
+    }
+    
+    res.status(500).json({ 
+      message: "Failed to test database connection", 
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+// Get tables for a database connection
+router.get('/connections/:id/tables', async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
+    const tables = await listDatabaseTables(id);
+    
+    res.json(tables);
+  } catch (error) {
+    res.status(500).json({ 
+      message: "Failed to fetch tables", 
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+// Get schema for a table
+router.get('/connections/:id/tables/:tableName/schema', async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
+    const tableName = req.params.tableName;
+    
+    const schema = await getTableSchema(id, tableName);
+    
+    res.json(schema);
+  } catch (error) {
+    res.status(500).json({ 
+      message: "Failed to fetch table schema", 
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+// Execute a custom SQL query
+router.post('/connections/:id/query', async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
+    const { query, params } = req.body;
+    
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ message: "Query is required" });
+    }
+    
+    const result = await executeQuery(id, query, params || []);
+    
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ 
+      message: "Failed to execute query", 
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+// Execute a query using the query builder
+router.post('/connections/:id/queryBuilder', async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
+    const options: QueryOptions = req.body;
+    
+    if (!options.table) {
+      return res.status(400).json({ message: "Table name is required" });
+    }
+    
+    const result = await buildAndExecuteQuery(id, options);
+    
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ 
+      message: "Failed to execute query", 
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
 });
 

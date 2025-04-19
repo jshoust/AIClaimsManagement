@@ -1,167 +1,184 @@
 /**
- * Database connector service
- * Provides unified interface for connecting to and querying external databases
+ * Database connector main service
+ * Provides functionality to connect to and query external databases
  */
 
+import { v4 as uuidv4 } from 'uuid';
+import { 
+  getDbConfigurations, 
+  getDbConfiguration,
+  saveDbConfiguration,
+  updateLastConnected,
+  deleteDbConfiguration
+} from './config-manager';
 import { createConnector } from './connectors';
-import * as configManager from './config-manager';
-import { ExternalDbConnector, DatabaseConfig, ConnectionTestResult, TableSchema, QueryOptions, QueryResult } from './types';
-
-// Cache connectors to avoid reconnecting for every query
-// Also helps with connection pooling for supported databases
-const connectorCache: Record<string, { connector: ExternalDbConnector, lastUsed: number }> = {};
-
-// Time in milliseconds after which a cached connector will be closed (5 minutes)
-const CONNECTOR_EXPIRY_MS = 5 * 60 * 1000;
+import { 
+  DatabaseConfig, 
+  ConnectionTestResult, 
+  QueryResult, 
+  QueryOptions,
+  TableSchema
+} from './types';
 
 /**
- * Get a database connector for the specified configuration
+ * Test a database connection configuration
  */
-function getConnector(config: DatabaseConfig): ExternalDbConnector {
-  const cacheKey = config.id;
-  const now = Date.now();
-  
-  // Check if we have a cached connector
-  if (connectorCache[cacheKey]) {
-    connectorCache[cacheKey].lastUsed = now;
-    return connectorCache[cacheKey].connector;
-  }
-  
-  // Create a new connector
-  let connector: ExternalDbConnector;
+export async function testDatabaseConnection(connectionConfig: Partial<DatabaseConfig>): Promise<ConnectionTestResult> {
   try {
-    connector = createConnector(config);
-    connectorCache[cacheKey] = { connector, lastUsed: now };
+    // Create a temporary configuration
+    const tempConfig: DatabaseConfig = {
+      id: connectionConfig.id || uuidv4(),
+      name: connectionConfig.name || 'Temporary Connection',
+      description: connectionConfig.description || '',
+      type: connectionConfig.type!,
+      host: connectionConfig.host!,
+      port: connectionConfig.port!,
+      database: connectionConfig.database!,
+      schema: connectionConfig.schema,
+      // Store credentials as stringified JSON
+      credentials: JSON.stringify({
+        username: connectionConfig.username || connectionConfig.user,
+        password: connectionConfig.password,
+        ssl: connectionConfig.ssl,
+        rejectUnauthorized: connectionConfig.rejectUnauthorized
+      }),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isActive: true,
+      createdBy: connectionConfig.createdBy || 'system',
+      tags: null
+    };
     
-    // Update last connected timestamp
-    configManager.updateLastConnected(config.id)
-      .catch(err => console.error(`Failed to update last connected timestamp for ${config.id}:`, err));
-    
-    return connector;
+    const connector = createConnector(tempConfig);
+    return await connector.testConnection();
   } catch (error) {
-    console.error(`Failed to create connector for ${config.name}:`, error);
-    throw new Error(`Failed to create database connector: ${error.message}`);
-  }
-}
-
-/**
- * Clean up expired connectors in the cache
- */
-function cleanupConnectorCache() {
-  const now = Date.now();
-  
-  Object.entries(connectorCache).forEach(([key, { connector, lastUsed }]) => {
-    if (now - lastUsed > CONNECTOR_EXPIRY_MS) {
-      // Close the connection and remove from cache
-      connector.disconnect()
-        .catch(err => console.error(`Error disconnecting from database ${key}:`, err))
-        .finally(() => {
-          delete connectorCache[key];
-          console.log(`Removed expired connector for ${key} from cache`);
-        });
-    }
-  });
-}
-
-// Set up periodic cleanup of expired connectors
-setInterval(cleanupConnectorCache, 60 * 1000); // Run every minute
-
-/**
- * Test a database connection
- */
-export async function testConnection(config: DatabaseConfig): Promise<ConnectionTestResult> {
-  try {
-    const startTime = Date.now();
-    
-    // Create a new connector specifically for testing
-    let connector: ExternalDbConnector;
-    try {
-      connector = createConnector(config);
-    } catch (error) {
-      return {
-        success: false,
-        message: `Failed to create connector: ${error.message}`,
-      };
-    }
-    
-    // Test the connection
-    try {
-      const result = await connector.testConnection();
-      const latency = Date.now() - startTime;
-      
-      return {
-        ...result,
-        latency,
-      };
-    } finally {
-      // Always disconnect after testing
-      await connector.disconnect().catch(err => {
-        console.error(`Error disconnecting from database ${config.name}:`, err);
-      });
-    }
-  } catch (error) {
+    console.error('Error testing database connection:', error);
     return {
       success: false,
-      message: `Connection test failed: ${error.message}`,
+      message: `Connection test failed: ${error instanceof Error ? error.message : String(error)}`
     };
   }
 }
 
 /**
- * Execute a query on a database
+ * Get all database configurations
  */
-export async function executeQuery(
-  configId: string,
-  query: string,
-  options?: QueryOptions
-): Promise<QueryResult> {
-  // Get the database configuration
-  const config = await configManager.getDbConfiguration(configId);
-  if (!config) {
-    throw new Error(`Database configuration not found: ${configId}`);
-  }
-  
-  // Get or create a connector
-  const connector = getConnector(config);
-  
+export async function getDatabaseConfigurations(): Promise<DatabaseConfig[]> {
   try {
-    // Connect if not already connected
+    return await getDbConfigurations();
+  } catch (error) {
+    console.error('Error getting database configurations:', error);
+    throw new Error(`Failed to get database configurations: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * Get a specific database configuration
+ */
+export async function getDatabaseConfiguration(id: string): Promise<DatabaseConfig | null> {
+  try {
+    return await getDbConfiguration(id);
+  } catch (error) {
+    console.error(`Error getting database configuration ${id}:`, error);
+    throw new Error(`Failed to get database configuration: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * Save a database configuration
+ */
+export async function saveDatabaseConfiguration(configData: Partial<DatabaseConfig>): Promise<DatabaseConfig> {
+  try {
+    const id = configData.id || uuidv4();
+    
+    // Format credentials as JSON
+    const credentials = JSON.stringify({
+      username: configData.username || configData.user,
+      password: configData.password,
+      ssl: configData.ssl,
+      rejectUnauthorized: configData.rejectUnauthorized
+    });
+    
+    const config: DatabaseConfig = {
+      id,
+      name: configData.name!,
+      description: configData.description || '',
+      type: configData.type!,
+      host: configData.host!,
+      port: configData.port!,
+      database: configData.database!,
+      schema: configData.schema,
+      credentials,
+      createdAt: configData.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastConnected: configData.lastConnected,
+      tags: Array.isArray(configData.tags) ? configData.tags.join(',') : configData.tags,
+      isActive: configData.isActive !== undefined ? configData.isActive : true,
+      createdBy: configData.createdBy || 'system'
+    };
+    
+    return await saveDbConfiguration(config);
+  } catch (error) {
+    console.error('Error saving database configuration:', error);
+    throw new Error(`Failed to save database configuration: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * Delete a database configuration
+ */
+export async function deleteDatabaseConfiguration(id: string): Promise<boolean> {
+  try {
+    return await deleteDbConfiguration(id);
+  } catch (error) {
+    console.error(`Error deleting database configuration ${id}:`, error);
+    throw new Error(`Failed to delete database configuration: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * Connect to a database and return the connector
+ */
+export async function connectToDatabase(configId: string) {
+  try {
+    const config = await getDbConfiguration(configId);
+    
+    if (!config) {
+      throw new Error(`Database configuration not found: ${configId}`);
+    }
+    
+    const connector = createConnector(config);
     await connector.connect();
     
-    // Execute the query
-    if (options) {
-      // If options are provided, use the query builder
-      return await connector.buildQuery(options);
-    } else {
-      // Otherwise execute the raw query
-      return await connector.executeQuery(query);
-    }
+    // Update last connected timestamp
+    await updateLastConnected(configId);
+    
+    return connector;
   } catch (error) {
-    throw new Error(`Query execution failed: ${error.message}`);
+    console.error(`Error connecting to database ${configId}:`, error);
+    throw new Error(`Failed to connect to database: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
 /**
  * List tables in a database
  */
-export async function listTables(configId: string): Promise<string[]> {
-  // Get the database configuration
-  const config = await configManager.getDbConfiguration(configId);
-  if (!config) {
-    throw new Error(`Database configuration not found: ${configId}`);
-  }
-  
-  // Get or create a connector
-  const connector = getConnector(config);
-  
+export async function listDatabaseTables(configId: string): Promise<string[]> {
+  let connector;
   try {
-    // Connect if not already connected
-    await connector.connect();
-    
-    // List tables
+    connector = await connectToDatabase(configId);
     return await connector.listTables();
   } catch (error) {
-    throw new Error(`Failed to list tables: ${error.message}`);
+    console.error(`Error listing tables for database ${configId}:`, error);
+    throw new Error(`Failed to list database tables: ${error instanceof Error ? error.message : String(error)}`);
+  } finally {
+    if (connector) {
+      try {
+        await connector.disconnect();
+      } catch (error) {
+        console.error(`Error disconnecting from database ${configId}:`, error);
+      }
+    }
   }
 }
 
@@ -169,22 +186,64 @@ export async function listTables(configId: string): Promise<string[]> {
  * Get schema for a table
  */
 export async function getTableSchema(configId: string, tableName: string): Promise<TableSchema> {
-  // Get the database configuration
-  const config = await configManager.getDbConfiguration(configId);
-  if (!config) {
-    throw new Error(`Database configuration not found: ${configId}`);
-  }
-  
-  // Get or create a connector
-  const connector = getConnector(config);
-  
+  let connector;
   try {
-    // Connect if not already connected
-    await connector.connect();
-    
-    // Get table schema
+    connector = await connectToDatabase(configId);
     return await connector.getTableSchema(tableName);
   } catch (error) {
-    throw new Error(`Failed to get table schema: ${error.message}`);
+    console.error(`Error getting schema for table ${tableName} in database ${configId}:`, error);
+    throw new Error(`Failed to get table schema: ${error instanceof Error ? error.message : String(error)}`);
+  } finally {
+    if (connector) {
+      try {
+        await connector.disconnect();
+      } catch (error) {
+        console.error(`Error disconnecting from database ${configId}:`, error);
+      }
+    }
+  }
+}
+
+/**
+ * Execute a query on a database
+ */
+export async function executeQuery(configId: string, query: string, params: any[] = []): Promise<QueryResult> {
+  let connector;
+  try {
+    connector = await connectToDatabase(configId);
+    return await connector.executeQuery(query, params);
+  } catch (error) {
+    console.error(`Error executing query on database ${configId}:`, error);
+    throw new Error(`Failed to execute query: ${error instanceof Error ? error.message : String(error)}`);
+  } finally {
+    if (connector) {
+      try {
+        await connector.disconnect();
+      } catch (error) {
+        console.error(`Error disconnecting from database ${configId}:`, error);
+      }
+    }
+  }
+}
+
+/**
+ * Build and execute a query on a database using the query builder
+ */
+export async function buildAndExecuteQuery(configId: string, options: QueryOptions): Promise<QueryResult> {
+  let connector;
+  try {
+    connector = await connectToDatabase(configId);
+    return await connector.buildQuery(options);
+  } catch (error) {
+    console.error(`Error building and executing query on database ${configId}:`, error);
+    throw new Error(`Failed to build and execute query: ${error instanceof Error ? error.message : String(error)}`);
+  } finally {
+    if (connector) {
+      try {
+        await connector.disconnect();
+      } catch (error) {
+        console.error(`Error disconnecting from database ${configId}:`, error);
+      }
+    }
   }
 }
