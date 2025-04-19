@@ -1,65 +1,58 @@
 /**
- * Database configuration manager
- * 
- * Handles saving and retrieving database connection configurations
+ * Configuration manager for database connections
+ * Handles storing and retrieving database configurations
  */
-import fs from 'fs/promises';
-import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
-import { DatabaseConfig } from './types';
 import { db } from '../../db';
-import { eq } from 'drizzle-orm';
+import { DatabaseConfig, DatabaseType } from './types';
 import { externalDatabases } from '../../../shared/schema';
-
-// Path for storing database configurations if using file storage
-const CONFIG_PATH = path.join(process.cwd(), 'data', 'db-connections.json');
-
-// Using environment variable to determine storage type
-const STORAGE_TYPE = process.env.DB_CONFIG_STORAGE || 'database'; // 'file' or 'database'
-
-/**
- * Initialize the configuration storage if needed
- */
-async function initializeStorage(): Promise<void> {
-  if (STORAGE_TYPE === 'file') {
-    try {
-      // Create directory if it doesn't exist
-      await fs.mkdir(path.dirname(CONFIG_PATH), { recursive: true });
-      
-      // Check if the file exists
-      try {
-        await fs.access(CONFIG_PATH);
-      } catch {
-        // File doesn't exist, create it with empty array
-        await fs.writeFile(CONFIG_PATH, JSON.stringify([], null, 2));
-      }
-    } catch (error) {
-      console.error('Error initializing database configuration storage:', error);
-      throw error;
-    }
-  }
-  // For database storage, we assume the table already exists
-}
+import { v4 as uuidv4 } from 'uuid';
+import { eq } from 'drizzle-orm';
 
 /**
  * Get all database configurations
  */
-export async function getDatabaseConfig(): Promise<DatabaseConfig[]> {
-  await initializeStorage();
-  
+export async function getDbConfigurations(): Promise<DatabaseConfig[]> {
   try {
-    if (STORAGE_TYPE === 'file') {
-      const data = await fs.readFile(CONFIG_PATH, 'utf-8');
-      return JSON.parse(data) as DatabaseConfig[];
-    } else {
-      // Use database storage
-      const configs = await db.select().from(externalDatabases);
-      return configs.map(config => ({
-        ...config,
-        credentials: JSON.parse(config.credentials as string) as DatabaseConfig['credentials'],
-        tags: config.tags ? JSON.parse(config.tags as string) as string[] : undefined
-      }));
-    }
+    const dbConfigs = await db.select().from(externalDatabases);
+    
+    return dbConfigs.map(config => {
+      let credentials;
+      // Parse stored credentials
+      try {
+        credentials = JSON.parse(config.credentials);
+      } catch (e) {
+        credentials = { username: '', password: '' };
+        console.error('Error parsing credentials for database:', config.id, e);
+      }
+      
+      // Parse stored tags
+      let tags: string[] | undefined;
+      if (config.tags) {
+        try {
+          tags = JSON.parse(config.tags);
+        } catch (e) {
+          console.error('Error parsing tags for database:', config.id, e);
+        }
+      }
+      
+      return {
+        id: config.id,
+        name: config.name,
+        description: config.description || '',
+        type: config.type as DatabaseType,
+        host: config.host,
+        port: config.port,
+        database: config.database,
+        schema: config.schema || undefined,
+        credentials,
+        createdAt: config.createdAt.toISOString(),
+        updatedAt: config.updatedAt.toISOString(),
+        lastConnected: config.lastConnected ? config.lastConnected.toISOString() : undefined,
+        tags,
+        isActive: config.isActive,
+        createdBy: config.createdBy,
+      };
+    });
   } catch (error) {
     console.error('Error getting database configurations:', error);
     return [];
@@ -67,63 +60,103 @@ export async function getDatabaseConfig(): Promise<DatabaseConfig[]> {
 }
 
 /**
- * Save a database configuration
+ * Get a specific database configuration by ID
  */
-export async function saveDatabaseConfig(config: DatabaseConfig): Promise<DatabaseConfig> {
-  await initializeStorage();
-  
-  // Generate id if not provided
-  if (!config.id) {
-    config.id = uuidv4();
-    config.createdAt = new Date().toISOString();
-  }
-  
-  config.updatedAt = new Date().toISOString();
-  
+export async function getDbConfiguration(id: string): Promise<DatabaseConfig | null> {
   try {
-    if (STORAGE_TYPE === 'file') {
-      // Get existing configs
-      const configs = await getDatabaseConfig();
-      
-      // Find index of existing config if updating
-      const existingIndex = configs.findIndex(c => c.id === config.id);
-      
-      if (existingIndex >= 0) {
-        // Update existing
-        configs[existingIndex] = config;
-      } else {
-        // Add new
-        configs.push(config);
-      }
-      
-      // Save back to file
-      await fs.writeFile(CONFIG_PATH, JSON.stringify(configs, null, 2));
-    } else {
-      // Use database storage
-      // Handle credentials serialization
-      const dbConfig = {
-        ...config,
-        credentials: JSON.stringify(config.credentials),
-        tags: config.tags ? JSON.stringify(config.tags) : null
-      };
-      
-      // Check if config exists
-      const existingConfig = await db.select({ id: externalDatabases.id })
-        .from(externalDatabases)
-        .where(eq(externalDatabases.id, config.id));
-      
-      if (existingConfig.length > 0) {
-        // Update existing
-        await db.update(externalDatabases)
-          .set(dbConfig)
-          .where(eq(externalDatabases.id, config.id));
-      } else {
-        // Insert new
-        await db.insert(externalDatabases).values(dbConfig);
+    const [config] = await db.select().from(externalDatabases).where(eq(externalDatabases.id, id));
+    
+    if (!config) {
+      return null;
+    }
+    
+    let credentials;
+    // Parse stored credentials
+    try {
+      credentials = JSON.parse(config.credentials);
+    } catch (e) {
+      credentials = { username: '', password: '' };
+      console.error('Error parsing credentials for database:', config.id, e);
+    }
+    
+    // Parse stored tags
+    let tags: string[] | undefined;
+    if (config.tags) {
+      try {
+        tags = JSON.parse(config.tags);
+      } catch (e) {
+        console.error('Error parsing tags for database:', config.id, e);
       }
     }
     
-    return config;
+    return {
+      id: config.id,
+      name: config.name,
+      description: config.description || '',
+      type: config.type as DatabaseType,
+      host: config.host,
+      port: config.port,
+      database: config.database,
+      schema: config.schema || undefined,
+      credentials,
+      createdAt: config.createdAt.toISOString(),
+      updatedAt: config.updatedAt.toISOString(),
+      lastConnected: config.lastConnected ? config.lastConnected.toISOString() : undefined,
+      tags,
+      isActive: config.isActive,
+      createdBy: config.createdBy,
+    };
+  } catch (error) {
+    console.error('Error getting database configuration:', error);
+    return null;
+  }
+}
+
+/**
+ * Save a database configuration
+ */
+export async function saveDbConfiguration(config: DatabaseConfig): Promise<DatabaseConfig> {
+  try {
+    // Check if config already exists
+    const existingConfigs = await db.select().from(externalDatabases).where(eq(externalDatabases.id, config.id));
+    const exists = existingConfigs.length > 0;
+    
+    // Prepare data for insertion/update
+    const { credentials, tags, ...rest } = config;
+    
+    const dbConfig = {
+      ...rest,
+      credentials: typeof credentials === 'string' ? credentials : JSON.stringify(credentials),
+      tags: tags ? JSON.stringify(tags) : null,
+      // Use current date for updated time
+      updatedAt: new Date()
+    };
+    
+    if (exists) {
+      // Update existing config
+      await db.update(externalDatabases)
+        .set(dbConfig)
+        .where(eq(externalDatabases.id, config.id));
+    } else {
+      // Insert new config
+      // Ensure we have an ID
+      if (!dbConfig.id) {
+        dbConfig.id = uuidv4();
+      }
+      
+      // Set created time for new configs
+      dbConfig.createdAt = new Date();
+      
+      await db.insert(externalDatabases).values(dbConfig);
+    }
+    
+    // Return the saved config
+    const savedConfig = await getDbConfiguration(dbConfig.id);
+    if (!savedConfig) {
+      throw new Error('Failed to retrieve saved configuration');
+    }
+    
+    return savedConfig;
   } catch (error) {
     console.error('Error saving database configuration:', error);
     throw error;
@@ -131,27 +164,24 @@ export async function saveDatabaseConfig(config: DatabaseConfig): Promise<Databa
 }
 
 /**
+ * Update the lastConnected timestamp for a database configuration
+ */
+export async function updateLastConnected(id: string): Promise<void> {
+  try {
+    await db.update(externalDatabases)
+      .set({ lastConnected: new Date() })
+      .where(eq(externalDatabases.id, id));
+  } catch (error) {
+    console.error('Error updating lastConnected timestamp:', error);
+  }
+}
+
+/**
  * Delete a database configuration
  */
-export async function deleteDatabaseConfig(id: string): Promise<boolean> {
-  await initializeStorage();
-  
+export async function deleteDbConfiguration(id: string): Promise<boolean> {
   try {
-    if (STORAGE_TYPE === 'file') {
-      // Get existing configs
-      const configs = await getDatabaseConfig();
-      
-      // Filter out the one to delete
-      const newConfigs = configs.filter(c => c.id !== id);
-      
-      // Save back to file
-      await fs.writeFile(CONFIG_PATH, JSON.stringify(newConfigs, null, 2));
-    } else {
-      // Use database storage
-      await db.delete(externalDatabases)
-        .where(eq(externalDatabases.id, id));
-    }
-    
+    await db.delete(externalDatabases).where(eq(externalDatabases.id, id));
     return true;
   } catch (error) {
     console.error('Error deleting database configuration:', error);

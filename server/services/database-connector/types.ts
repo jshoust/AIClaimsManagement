@@ -1,5 +1,5 @@
 /**
- * Type definitions for the external database connector service
+ * Type definitions for the database connector
  */
 
 export type DatabaseType = 'sqlserver' | 'mysql' | 'postgres' | 'oracle';
@@ -7,8 +7,8 @@ export type DatabaseType = 'sqlserver' | 'mysql' | 'postgres' | 'oracle';
 export interface DatabaseCredentials {
   username: string;
   password: string;
-  useWindowsAuth?: boolean; // For SQL Server
-  connectionString?: string; // For direct connection string
+  useWindowsAuth?: boolean;
+  connectionString?: string;
   useSsl?: boolean;
 }
 
@@ -30,110 +30,116 @@ export interface DatabaseConfig {
   createdBy: string;
 }
 
-export interface QueryOptions {
-  parameters?: Record<string, any>;
-  timeout?: number;
-  useQueryBuilder?: boolean;
-  queryBuilderConfig?: QueryBuilderConfig;
-  transform?: boolean;
-  transformConfig?: TransformConfig;
-  maxRows?: number;
-}
-
 export interface QueryResult {
-  columns: ColumnInfo[];
-  rows: any[];
-  rowCount: number;
-  executionTime: number;
-  metadata?: Record<string, any>;
+  columns: string[];
+  rows: Record<string, any>[];
+  metadata?: {
+    totalRows?: number;
+    executionTime?: number;
+    affectedRows?: number;
+    warnings?: string[];
+  };
 }
 
-export interface ColumnInfo {
+export interface ColumnDefinition {
   name: string;
   type: string;
   nullable: boolean;
-  size?: number;
+  defaultValue?: string;
+  isPrimaryKey: boolean;
+  isForeignKey: boolean;
+  referencedTable?: string;
+  referencedColumn?: string;
+  description?: string;
+  length?: number;
   precision?: number;
   scale?: number;
 }
 
 export interface TableSchema {
-  name: string;
-  columns: ColumnInfo[];
-  primaryKey?: string[];
-  foreignKeys?: ForeignKeyInfo[];
-  indices?: IndexInfo[];
+  tableName: string;
+  columns: ColumnDefinition[];
+  primaryKeys: string[];
+  foreignKeys: {
+    column: string;
+    referencedTable: string;
+    referencedColumn: string;
+  }[];
+  indexes: {
+    name: string;
+    columns: string[];
+    isUnique: boolean;
+  }[];
 }
 
-export interface ForeignKeyInfo {
-  name: string;
-  columns: string[];
-  referencedTable: string;
-  referencedColumns: string[];
+export interface ConnectionTestResult {
+  success: boolean;
+  message: string;
+  details?: string;
 }
 
-export interface IndexInfo {
-  name: string;
-  columns: string[];
-  isUnique: boolean;
+export interface TransformConfig {
+  filterConditions?: FilterCondition[];
+  dateFormatOptions?: DateFormatConfig[];
+  sortOptions?: SortOption[];
+  pagination?: {
+    limit: number;
+    offset: number;
+  };
+}
+
+export interface FilterCondition {
+  field: string;
+  operator: 'equals' | 'notEquals' | 'contains' | 'greaterThan' | 'lessThan' | 'in' | 'between';
+  value: any;
+}
+
+export interface DateFormatConfig {
+  field: string;
+  format: string;
+}
+
+export interface SortOption {
+  field: string;
+  direction: 'asc' | 'desc';
 }
 
 export interface QueryBuilderConfig {
-  table: string;
-  columns?: string[];
+  select: string[];
+  from: string;
+  joins?: JoinConfig[];
   where?: WhereCondition[];
-  orderBy?: OrderByConfig[];
   groupBy?: string[];
+  having?: WhereCondition[];
+  orderBy?: SortOption[];
   limit?: number;
   offset?: number;
-  joins?: JoinConfig[];
-}
-
-export interface WhereCondition {
-  column: string;
-  operator: 'equals' | 'notEquals' | 'greaterThan' | 'lessThan' | 'contains' | 'startsWith' | 'endsWith' | 'in' | 'between' | 'isNull' | 'isNotNull';
-  value?: any;
-  values?: any[]; // For 'in' or 'between' operators
-  logic?: 'and' | 'or'; // Logic operator to connect with next condition
-}
-
-export interface OrderByConfig {
-  column: string;
-  direction: 'asc' | 'desc';
 }
 
 export interface JoinConfig {
   type: 'inner' | 'left' | 'right' | 'full';
   table: string;
-  alias?: string;
   on: {
-    leftColumn: string;
-    rightColumn: string;
-  }[];
+    leftField: string;
+    operator: string;
+    rightField: string;
+  };
 }
 
-export interface TransformConfig {
-  renameColumns?: Record<string, string>;
-  calculateFields?: CalculatedField[];
-  filterRows?: FilterCondition[];
-  formatDates?: DateFormatConfig[];
-  excludeColumns?: string[];
-}
-
-export interface CalculatedField {
-  name: string;
-  formula: string; // e.g. "{column1} + {column2}" or more complex expressions
-}
-
-export interface FilterCondition {
-  column: string;
-  operator: 'equals' | 'notEquals' | 'greaterThan' | 'lessThan' | 'contains' | 'startsWith' | 'endsWith';
+export interface WhereCondition {
+  field: string;
+  operator: string;
   value: any;
+  logic?: 'and' | 'or';
 }
 
-export interface DateFormatConfig {
-  column: string;
-  format: string; // e.g. "YYYY-MM-DD"
+export interface QueryOptions {
+  parameters?: Record<string, any>;
+  timeout?: number;
+  maxRows?: number;
+  transformConfig?: TransformConfig;
+  useQueryBuilder?: boolean;
+  queryBuilderConfig?: QueryBuilderConfig;
 }
 
 export interface ExternalDbConnector {

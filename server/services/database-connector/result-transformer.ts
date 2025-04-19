@@ -2,6 +2,7 @@
  * Result transformer for query results
  */
 import { QueryResult, TransformConfig, FilterCondition, DateFormatConfig } from './types';
+import { format as formatDate } from 'date-fns';
 
 /**
  * Transform a query result based on the provided configuration
@@ -13,108 +14,50 @@ export function transformQueryResult(result: QueryResult, config?: TransformConf
   
   let transformedResult = { ...result };
   
-  // Clone rows to avoid modifying the original result
-  let transformedRows = JSON.parse(JSON.stringify(result.rows));
+  // Apply filtering if configured
+  if (config.filterConditions && config.filterConditions.length > 0) {
+    transformedResult.rows = filterRows(transformedResult.rows, config.filterConditions);
+    
+    // Update metadata if available
+    if (transformedResult.metadata) {
+      transformedResult.metadata.totalRows = transformedResult.rows.length;
+    }
+  }
   
-  // Apply transformations in sequence
+  // Apply date formatting if configured
+  if (config.dateFormatOptions && config.dateFormatOptions.length > 0) {
+    transformedResult.rows = formatDates(transformedResult.rows, config.dateFormatOptions);
+  }
   
-  // 1. Rename columns if specified
-  if (config.renameColumns) {
-    // Update the columns array
-    transformedResult.columns = result.columns.map(col => {
-      if (config.renameColumns && config.renameColumns[col.name]) {
-        return {
-          ...col,
-          name: config.renameColumns[col.name]
-        };
+  // Apply sorting if configured
+  if (config.sortOptions && config.sortOptions.length > 0) {
+    transformedResult.rows.sort((a, b) => {
+      for (const sort of config.sortOptions || []) {
+        const fieldA = a[sort.field];
+        const fieldB = b[sort.field];
+        
+        // Skip if both values are undefined
+        if (fieldA === undefined && fieldB === undefined) {
+          continue;
+        }
+        
+        // Handle nulls (null values come last)
+        if (fieldA === null && fieldB !== null) return sort.direction === 'asc' ? 1 : -1;
+        if (fieldA !== null && fieldB === null) return sort.direction === 'asc' ? -1 : 1;
+        
+        // Regular comparison
+        if (fieldA < fieldB) return sort.direction === 'asc' ? -1 : 1;
+        if (fieldA > fieldB) return sort.direction === 'asc' ? 1 : -1;
       }
-      return col;
-    });
-    
-    // Update the row objects
-    transformedRows = transformedRows.map((row: any) => {
-      const newRow: any = {};
-      Object.keys(row).forEach(key => {
-        const newKey = config.renameColumns && config.renameColumns[key] ? config.renameColumns[key] : key;
-        newRow[newKey] = row[key];
-      });
-      return newRow;
+      return 0;
     });
   }
   
-  // 2. Calculate new fields if specified
-  if (config.calculateFields && config.calculateFields.length > 0) {
-    // Add calculated columns to the columns array
-    config.calculateFields.forEach(calcField => {
-      transformedResult.columns.push({
-        name: calcField.name,
-        type: 'calculated',
-        nullable: true
-      });
-    });
-    
-    // Add calculated values to each row
-    transformedRows = transformedRows.map((row: any) => {
-      const newRow = { ...row };
-      
-      config.calculateFields?.forEach(calcField => {
-        // Parse the formula and replace column references with actual values
-        let formula = calcField.formula;
-        
-        // Replace all column references in the format {columnName} with the actual value
-        Object.keys(row).forEach(key => {
-          const regex = new RegExp(`\\{${key}\\}`, 'g');
-          const value = row[key] === null ? 'null' : JSON.stringify(row[key]);
-          formula = formula.replace(regex, value);
-        });
-        
-        // Evaluate the formula (with safe eval)
-        try {
-          // Use Function constructor instead of eval for better security
-          // Still not completely safe for untrusted user input
-          const calculatedValue = new Function(`return ${formula}`)();
-          newRow[calcField.name] = calculatedValue;
-        } catch (error) {
-          console.error(`Error calculating field ${calcField.name}:`, error);
-          newRow[calcField.name] = null;
-        }
-      });
-      
-      return newRow;
-    });
+  // Apply pagination if configured
+  if (config.pagination) {
+    const { limit, offset } = config.pagination;
+    transformedResult.rows = transformedResult.rows.slice(offset, offset + limit);
   }
-  
-  // 3. Filter rows if specified
-  if (config.filterRows && config.filterRows.length > 0) {
-    transformedRows = filterRows(transformedRows, config.filterRows);
-    transformedResult.rowCount = transformedRows.length;
-  }
-  
-  // 4. Format dates if specified
-  if (config.formatDates && config.formatDates.length > 0) {
-    transformedRows = formatDates(transformedRows, config.formatDates);
-  }
-  
-  // 5. Exclude columns if specified
-  if (config.excludeColumns && config.excludeColumns.length > 0) {
-    // Update the columns array
-    transformedResult.columns = transformedResult.columns.filter(
-      col => !config.excludeColumns?.includes(col.name)
-    );
-    
-    // Update the row objects
-    transformedRows = transformedRows.map((row: any) => {
-      const newRow: any = {};
-      Object.keys(row).forEach(key => {
-        if (!config.excludeColumns?.includes(key)) {
-          newRow[key] = row[key];
-        }
-      });
-      return newRow;
-    });
-  }
-  
-  transformedResult.rows = transformedRows;
   
   return transformedResult;
 }
@@ -124,32 +67,38 @@ export function transformQueryResult(result: QueryResult, config?: TransformConf
  */
 function filterRows(rows: any[], filterConditions: FilterCondition[]): any[] {
   return rows.filter(row => {
-    // A row must satisfy all filter conditions
     return filterConditions.every(condition => {
-      const { column, operator, value } = condition;
-      const rowValue = row[column];
+      const fieldValue = row[condition.field];
       
       // Handle null values
-      if (rowValue === null || rowValue === undefined) {
-        return operator === 'equals' && value === null;
+      if (fieldValue === null || fieldValue === undefined) {
+        return false;
       }
       
-      // Compare based on operator
-      switch (operator) {
+      switch (condition.operator) {
         case 'equals':
-          return rowValue === value;
+          return fieldValue === condition.value;
+          
         case 'notEquals':
-          return rowValue !== value;
-        case 'greaterThan':
-          return rowValue > value;
-        case 'lessThan':
-          return rowValue < value;
+          return fieldValue !== condition.value;
+          
         case 'contains':
-          return typeof rowValue === 'string' && rowValue.includes(value);
-        case 'startsWith':
-          return typeof rowValue === 'string' && rowValue.startsWith(value);
-        case 'endsWith':
-          return typeof rowValue === 'string' && rowValue.endsWith(value);
+          return String(fieldValue).toLowerCase().includes(String(condition.value).toLowerCase());
+          
+        case 'greaterThan':
+          return fieldValue > condition.value;
+          
+        case 'lessThan':
+          return fieldValue < condition.value;
+          
+        case 'in':
+          return Array.isArray(condition.value) && condition.value.includes(fieldValue);
+          
+        case 'between':
+          return Array.isArray(condition.value) && 
+            fieldValue >= condition.value[0] && 
+            fieldValue <= condition.value[1];
+            
         default:
           return true;
       }
@@ -162,52 +111,29 @@ function filterRows(rows: any[], filterConditions: FilterCondition[]): any[] {
  */
 function formatDates(rows: any[], dateFormatConfigs: DateFormatConfig[]): any[] {
   return rows.map(row => {
-    const newRow = { ...row };
+    const formattedRow = { ...row };
     
     dateFormatConfigs.forEach(config => {
-      const { column, format } = config;
-      const value = row[column];
+      const value = row[config.field];
       
-      if (value !== null && value !== undefined) {
-        try {
-          // Parse the value as a date if it's a string
-          const date = typeof value === 'string' ? new Date(value) : value;
-          
-          // Check if the date is valid
-          if (date instanceof Date && !isNaN(date.getTime())) {
-            // Format the date according to the specified format
-            newRow[column] = formatDate(date, format);
-          }
-        } catch (error) {
-          console.error(`Error formatting date for column ${column}:`, error);
-        }
+      if (value && (value instanceof Date || !isNaN(new Date(value).getTime()))) {
+        const dateObj = value instanceof Date ? value : new Date(value);
+        formattedRow[config.field] = formatDateValue(dateObj, config.format);
       }
     });
     
-    return newRow;
+    return formattedRow;
   });
 }
 
 /**
  * Format a date according to the specified format string
  */
-function formatDate(date: Date, format: string): string {
-  // Simple date formatting implementation
-  // In a real implementation, we would use a library like date-fns
-  
-  const year = date.getFullYear().toString();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  const seconds = date.getSeconds().toString().padStart(2, '0');
-  
-  // Replace format tokens with actual values
-  return format
-    .replace(/YYYY/g, year)
-    .replace(/MM/g, month)
-    .replace(/DD/g, day)
-    .replace(/HH/g, hours)
-    .replace(/mm/g, minutes)
-    .replace(/ss/g, seconds);
+function formatDateValue(date: Date, format: string): string {
+  try {
+    return formatDate(date, format);
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return date.toISOString();
+  }
 }

@@ -1,93 +1,100 @@
 /**
  * Database connectors for different database engines
  */
-import { DatabaseConfig, ExternalDbConnector, QueryResult, TableSchema } from './types';
+import { DatabaseConfig, QueryResult, TableSchema, ExternalDbConnector } from './types';
 
 /**
  * Create a SQL Server connector
  */
 export function createSqlServerConnector(config: DatabaseConfig): ExternalDbConnector {
-  // In a real implementation, we would use mssql package
   return {
     async testConnection(): Promise<void> {
-      // Placeholder for actual connection test
-      // In a real implementation, we would use something like:
-      // const pool = new sql.ConnectionPool(connectionConfig);
-      // await pool.connect();
-      // await pool.close();
-
-      // For demo purposes, just simulate a connection
-      if (!config.host || !config.database) {
-        throw new Error('Invalid connection parameters');
+      // This is a simulation since we don't have actual SQL Server driver installed
+      // In a real implementation, you would use a package like 'mssql'
+      
+      console.log(`Testing connection to SQL Server: ${config.host}:${config.port}/${config.database}`);
+      
+      // Simulate connection test
+      if (config.host === 'invalid-host') {
+        throw new Error('Could not connect to SQL Server');
       }
       
-      console.log(`Testing connection to SQL Server ${config.host}/${config.database}`);
-      
-      // Simulate connection failure for specific test cases
-      if (config.host === 'invalid.host') {
-        throw new Error('Could not connect to the database server');
-      }
+      // Connection successful
+      return Promise.resolve();
     },
     
     async executeQuery(query: string, parameters?: Record<string, any>): Promise<QueryResult> {
-      // Placeholder for actual query execution
-      console.log(`Executing query on SQL Server ${config.host}/${config.database}:`, query, parameters);
+      console.log(`Executing query on SQL Server: ${query}`);
+      console.log('Parameters:', parameters);
       
-      // Return simulated results (in real implementation, this would be the actual query results)
+      // Simulate query execution
+      // In a real implementation, this would execute the query using the SQL Server driver
+      
+      // Return mock result
       return {
-        columns: [
-          { name: 'id', type: 'int', nullable: false },
-          { name: 'name', type: 'varchar', nullable: true, size: 100 },
-          { name: 'created_date', type: 'datetime', nullable: true }
-        ],
+        columns: ['id', 'name', 'description'],
         rows: [
-          { id: 1, name: 'Sample data 1', created_date: new Date().toISOString() },
-          { id: 2, name: 'Sample data 2', created_date: new Date().toISOString() }
+          { id: 1, name: 'Sample 1', description: 'SQL Server sample data 1' },
+          { id: 2, name: 'Sample 2', description: 'SQL Server sample data 2' }
         ],
-        rowCount: 2,
-        executionTime: 10
+        metadata: {
+          totalRows: 2,
+          executionTime: 0.01,
+          affectedRows: 0
+        }
       };
     },
     
     async listTables(): Promise<string[]> {
-      // Placeholder for actual table listing
-      console.log(`Listing tables in SQL Server ${config.host}/${config.database}`);
+      console.log(`Listing tables in database ${config.database}`);
       
-      // Return simulated results
-      return [
-        'customers',
-        'orders',
-        'products',
-        'shipments'
-      ];
+      // Simulate listing tables
+      // In a real implementation, this would query the SQL Server metadata tables
+      
+      return ['customers', 'orders', 'products'];
     },
     
     async getTableSchema(tableName: string): Promise<TableSchema> {
-      // Placeholder for actual schema retrieval
-      console.log(`Getting schema for table ${tableName} in SQL Server ${config.host}/${config.database}`);
+      console.log(`Getting schema for table ${tableName}`);
       
-      // Return simulated schema
+      // Simulate getting table schema
+      // In a real implementation, this would query the SQL Server metadata tables
+      
       return {
-        name: tableName,
+        tableName,
         columns: [
-          { name: 'id', type: 'int', nullable: false },
-          { name: 'name', type: 'varchar', nullable: true, size: 100 },
-          { name: 'description', type: 'text', nullable: true },
-          { name: 'created_date', type: 'datetime', nullable: true }
-        ],
-        primaryKey: ['id'],
-        foreignKeys: [
           {
-            name: 'fk_category',
-            columns: ['category_id'],
-            referencedTable: 'categories',
-            referencedColumns: ['id']
+            name: 'id',
+            type: 'int',
+            nullable: false,
+            isPrimaryKey: true,
+            isForeignKey: false,
+            description: 'Primary key'
+          },
+          {
+            name: 'name',
+            type: 'varchar',
+            nullable: false,
+            isPrimaryKey: false,
+            isForeignKey: false,
+            length: 255,
+            description: 'Name field'
+          },
+          {
+            name: 'description',
+            type: 'text',
+            nullable: true,
+            isPrimaryKey: false,
+            isForeignKey: false,
+            description: 'Description field'
           }
         ],
-        indices: [
+        primaryKeys: ['id'],
+        foreignKeys: [],
+        indexes: [
           {
-            name: 'idx_name',
-            columns: ['name'],
+            name: 'PK_' + tableName,
+            columns: ['id'],
             isUnique: true
           }
         ]
@@ -95,8 +102,8 @@ export function createSqlServerConnector(config: DatabaseConfig): ExternalDbConn
     },
     
     async close(): Promise<void> {
-      // Placeholder for closing connection
-      console.log(`Closing connection to SQL Server ${config.host}/${config.database}`);
+      console.log('Closing SQL Server connection');
+      return Promise.resolve();
     }
   };
 }
@@ -105,81 +112,91 @@ export function createSqlServerConnector(config: DatabaseConfig): ExternalDbConn
  * Create a MySQL connector
  */
 export function createMySqlConnector(config: DatabaseConfig): ExternalDbConnector {
-  // In a real implementation, we would use mysql2 package
   return {
     async testConnection(): Promise<void> {
-      // Placeholder for actual connection test
-      if (!config.host || !config.database) {
-        throw new Error('Invalid connection parameters');
+      // This is a simulation since we don't have actual MySQL driver installed
+      // In a real implementation, you would use a package like 'mysql2'
+      
+      console.log(`Testing connection to MySQL: ${config.host}:${config.port}/${config.database}`);
+      
+      // Simulate connection test
+      if (config.host === 'invalid-host') {
+        throw new Error('Could not connect to MySQL');
       }
       
-      console.log(`Testing connection to MySQL ${config.host}/${config.database}`);
-      
-      // Simulate connection failure for specific test cases
-      if (config.host === 'invalid.host') {
-        throw new Error('Could not connect to the database server');
-      }
+      // Connection successful
+      return Promise.resolve();
     },
     
     async executeQuery(query: string, parameters?: Record<string, any>): Promise<QueryResult> {
-      // Placeholder for actual query execution
-      console.log(`Executing query on MySQL ${config.host}/${config.database}:`, query, parameters);
+      console.log(`Executing query on MySQL: ${query}`);
+      console.log('Parameters:', parameters);
       
-      // Return simulated results
+      // Simulate query execution
+      
+      // Return mock result
       return {
-        columns: [
-          { name: 'id', type: 'int', nullable: false },
-          { name: 'name', type: 'varchar', nullable: true, size: 100 },
-          { name: 'created_date', type: 'datetime', nullable: true }
-        ],
+        columns: ['id', 'name', 'description'],
         rows: [
-          { id: 1, name: 'Sample data 1', created_date: new Date().toISOString() },
-          { id: 2, name: 'Sample data 2', created_date: new Date().toISOString() }
+          { id: 1, name: 'Sample 1', description: 'MySQL sample data 1' },
+          { id: 2, name: 'Sample 2', description: 'MySQL sample data 2' }
         ],
-        rowCount: 2,
-        executionTime: 8
+        metadata: {
+          totalRows: 2,
+          executionTime: 0.01,
+          affectedRows: 0
+        }
       };
     },
     
     async listTables(): Promise<string[]> {
-      // Placeholder for actual table listing
-      console.log(`Listing tables in MySQL ${config.host}/${config.database}`);
+      console.log(`Listing tables in database ${config.database}`);
       
-      // Return simulated results
-      return [
-        'customers',
-        'orders',
-        'products',
-        'shipments'
-      ];
+      // Simulate listing tables
+      
+      return ['users', 'orders', 'products'];
     },
     
     async getTableSchema(tableName: string): Promise<TableSchema> {
-      // Placeholder for actual schema retrieval
-      console.log(`Getting schema for table ${tableName} in MySQL ${config.host}/${config.database}`);
+      console.log(`Getting schema for table ${tableName}`);
       
-      // Return simulated schema
+      // Simulate getting table schema
+      
       return {
-        name: tableName,
+        tableName,
         columns: [
-          { name: 'id', type: 'int', nullable: false },
-          { name: 'name', type: 'varchar', nullable: true, size: 100 },
-          { name: 'description', type: 'text', nullable: true },
-          { name: 'created_date', type: 'datetime', nullable: true }
-        ],
-        primaryKey: ['id'],
-        foreignKeys: [
           {
-            name: 'fk_category',
-            columns: ['category_id'],
-            referencedTable: 'categories',
-            referencedColumns: ['id']
+            name: 'id',
+            type: 'int',
+            nullable: false,
+            isPrimaryKey: true,
+            isForeignKey: false,
+            description: 'Primary key'
+          },
+          {
+            name: 'name',
+            type: 'varchar',
+            nullable: false,
+            isPrimaryKey: false,
+            isForeignKey: false,
+            length: 255,
+            description: 'Name field'
+          },
+          {
+            name: 'description',
+            type: 'text',
+            nullable: true,
+            isPrimaryKey: false,
+            isForeignKey: false,
+            description: 'Description field'
           }
         ],
-        indices: [
+        primaryKeys: ['id'],
+        foreignKeys: [],
+        indexes: [
           {
-            name: 'idx_name',
-            columns: ['name'],
+            name: 'PRIMARY',
+            columns: ['id'],
             isUnique: true
           }
         ]
@@ -187,8 +204,8 @@ export function createMySqlConnector(config: DatabaseConfig): ExternalDbConnecto
     },
     
     async close(): Promise<void> {
-      // Placeholder for closing connection
-      console.log(`Closing connection to MySQL ${config.host}/${config.database}`);
+      console.log('Closing MySQL connection');
+      return Promise.resolve();
     }
   };
 }
@@ -197,81 +214,91 @@ export function createMySqlConnector(config: DatabaseConfig): ExternalDbConnecto
  * Create a PostgreSQL connector
  */
 export function createPostgresConnector(config: DatabaseConfig): ExternalDbConnector {
-  // In a real implementation, we would use pg package
   return {
     async testConnection(): Promise<void> {
-      // Placeholder for actual connection test
-      if (!config.host || !config.database) {
-        throw new Error('Invalid connection parameters');
+      // This is a simulation since we don't want to connect to real Postgres instances
+      // In a real implementation, you would use a package like 'pg'
+      
+      console.log(`Testing connection to PostgreSQL: ${config.host}:${config.port}/${config.database}`);
+      
+      // Simulate connection test
+      if (config.host === 'invalid-host') {
+        throw new Error('Could not connect to PostgreSQL');
       }
       
-      console.log(`Testing connection to PostgreSQL ${config.host}/${config.database}`);
-      
-      // Simulate connection failure for specific test cases
-      if (config.host === 'invalid.host') {
-        throw new Error('Could not connect to the database server');
-      }
+      // Connection successful
+      return Promise.resolve();
     },
     
     async executeQuery(query: string, parameters?: Record<string, any>): Promise<QueryResult> {
-      // Placeholder for actual query execution
-      console.log(`Executing query on PostgreSQL ${config.host}/${config.database}:`, query, parameters);
+      console.log(`Executing query on PostgreSQL: ${query}`);
+      console.log('Parameters:', parameters);
       
-      // Return simulated results
+      // Simulate query execution
+      
+      // Return mock result
       return {
-        columns: [
-          { name: 'id', type: 'integer', nullable: false },
-          { name: 'name', type: 'character varying', nullable: true, size: 100 },
-          { name: 'created_date', type: 'timestamp with time zone', nullable: true }
-        ],
+        columns: ['id', 'name', 'description'],
         rows: [
-          { id: 1, name: 'Sample data 1', created_date: new Date().toISOString() },
-          { id: 2, name: 'Sample data 2', created_date: new Date().toISOString() }
+          { id: 1, name: 'Sample 1', description: 'PostgreSQL sample data 1' },
+          { id: 2, name: 'Sample 2', description: 'PostgreSQL sample data 2' }
         ],
-        rowCount: 2,
-        executionTime: 5
+        metadata: {
+          totalRows: 2,
+          executionTime: 0.01,
+          affectedRows: 0
+        }
       };
     },
     
     async listTables(): Promise<string[]> {
-      // Placeholder for actual table listing
-      console.log(`Listing tables in PostgreSQL ${config.host}/${config.database}`);
+      console.log(`Listing tables in schema ${config.schema || 'public'}`);
       
-      // Return simulated results
-      return [
-        'customers',
-        'orders',
-        'products',
-        'shipments'
-      ];
+      // Simulate listing tables
+      
+      return ['accounts', 'transactions', 'customers'];
     },
     
     async getTableSchema(tableName: string): Promise<TableSchema> {
-      // Placeholder for actual schema retrieval
-      console.log(`Getting schema for table ${tableName} in PostgreSQL ${config.host}/${config.database}`);
+      console.log(`Getting schema for table ${tableName}`);
       
-      // Return simulated schema
+      // Simulate getting table schema
+      
       return {
-        name: tableName,
+        tableName,
         columns: [
-          { name: 'id', type: 'integer', nullable: false },
-          { name: 'name', type: 'character varying', nullable: true, size: 100 },
-          { name: 'description', type: 'text', nullable: true },
-          { name: 'created_date', type: 'timestamp with time zone', nullable: true }
-        ],
-        primaryKey: ['id'],
-        foreignKeys: [
           {
-            name: 'fk_category',
-            columns: ['category_id'],
-            referencedTable: 'categories',
-            referencedColumns: ['id']
+            name: 'id',
+            type: 'integer',
+            nullable: false,
+            isPrimaryKey: true,
+            isForeignKey: false,
+            description: 'Primary key'
+          },
+          {
+            name: 'name',
+            type: 'character varying',
+            nullable: false,
+            isPrimaryKey: false,
+            isForeignKey: false,
+            length: 255,
+            description: 'Name field'
+          },
+          {
+            name: 'description',
+            type: 'text',
+            nullable: true,
+            isPrimaryKey: false,
+            isForeignKey: false,
+            description: 'Description field'
           }
         ],
-        indices: [
+        primaryKeys: ['id'],
+        foreignKeys: [],
+        indexes: [
           {
-            name: 'idx_name',
-            columns: ['name'],
+            name: tableName + '_pkey',
+            columns: ['id'],
             isUnique: true
           }
         ]
@@ -279,8 +306,8 @@ export function createPostgresConnector(config: DatabaseConfig): ExternalDbConne
     },
     
     async close(): Promise<void> {
-      // Placeholder for closing connection
-      console.log(`Closing connection to PostgreSQL ${config.host}/${config.database}`);
+      console.log('Closing PostgreSQL connection');
+      return Promise.resolve();
     }
   };
 }
@@ -289,81 +316,91 @@ export function createPostgresConnector(config: DatabaseConfig): ExternalDbConne
  * Create an Oracle connector
  */
 export function createOracleConnector(config: DatabaseConfig): ExternalDbConnector {
-  // In a real implementation, we would use oracledb package
   return {
     async testConnection(): Promise<void> {
-      // Placeholder for actual connection test
-      if (!config.host || !config.database) {
-        throw new Error('Invalid connection parameters');
+      // This is a simulation since we don't have actual Oracle driver installed
+      // In a real implementation, you would use a package like 'oracledb'
+      
+      console.log(`Testing connection to Oracle: ${config.host}:${config.port}/${config.database}`);
+      
+      // Simulate connection test
+      if (config.host === 'invalid-host') {
+        throw new Error('Could not connect to Oracle');
       }
       
-      console.log(`Testing connection to Oracle ${config.host}/${config.database}`);
-      
-      // Simulate connection failure for specific test cases
-      if (config.host === 'invalid.host') {
-        throw new Error('Could not connect to the database server');
-      }
+      // Connection successful
+      return Promise.resolve();
     },
     
     async executeQuery(query: string, parameters?: Record<string, any>): Promise<QueryResult> {
-      // Placeholder for actual query execution
-      console.log(`Executing query on Oracle ${config.host}/${config.database}:`, query, parameters);
+      console.log(`Executing query on Oracle: ${query}`);
+      console.log('Parameters:', parameters);
       
-      // Return simulated results
+      // Simulate query execution
+      
+      // Return mock result
       return {
-        columns: [
-          { name: 'ID', type: 'NUMBER', nullable: false, precision: 10, scale: 0 },
-          { name: 'NAME', type: 'VARCHAR2', nullable: true, size: 100 },
-          { name: 'CREATED_DATE', type: 'DATE', nullable: true }
-        ],
+        columns: ['ID', 'NAME', 'DESCRIPTION'],
         rows: [
-          { ID: 1, NAME: 'Sample data 1', CREATED_DATE: new Date().toISOString() },
-          { ID: 2, NAME: 'Sample data 2', CREATED_DATE: new Date().toISOString() }
+          { ID: 1, NAME: 'Sample 1', DESCRIPTION: 'Oracle sample data 1' },
+          { ID: 2, NAME: 'Sample 2', DESCRIPTION: 'Oracle sample data 2' }
         ],
-        rowCount: 2,
-        executionTime: 15
+        metadata: {
+          totalRows: 2,
+          executionTime: 0.01,
+          affectedRows: 0
+        }
       };
     },
     
     async listTables(): Promise<string[]> {
-      // Placeholder for actual table listing
-      console.log(`Listing tables in Oracle ${config.host}/${config.database}`);
+      console.log(`Listing tables for user ${config.credentials.username}`);
       
-      // Return simulated results
-      return [
-        'CUSTOMERS',
-        'ORDERS',
-        'PRODUCTS',
-        'SHIPMENTS'
-      ];
+      // Simulate listing tables
+      
+      return ['EMPLOYEES', 'DEPARTMENTS', 'LOCATIONS'];
     },
     
     async getTableSchema(tableName: string): Promise<TableSchema> {
-      // Placeholder for actual schema retrieval
-      console.log(`Getting schema for table ${tableName} in Oracle ${config.host}/${config.database}`);
+      console.log(`Getting schema for table ${tableName}`);
       
-      // Return simulated schema
+      // Simulate getting table schema
+      
       return {
-        name: tableName,
+        tableName,
         columns: [
-          { name: 'ID', type: 'NUMBER', nullable: false, precision: 10, scale: 0 },
-          { name: 'NAME', type: 'VARCHAR2', nullable: true, size: 100 },
-          { name: 'DESCRIPTION', type: 'CLOB', nullable: true },
-          { name: 'CREATED_DATE', type: 'DATE', nullable: true }
-        ],
-        primaryKey: ['ID'],
-        foreignKeys: [
           {
-            name: 'FK_CATEGORY',
-            columns: ['CATEGORY_ID'],
-            referencedTable: 'CATEGORIES',
-            referencedColumns: ['ID']
+            name: 'ID',
+            type: 'NUMBER',
+            nullable: false,
+            isPrimaryKey: true,
+            isForeignKey: false,
+            description: 'Primary key'
+          },
+          {
+            name: 'NAME',
+            type: 'VARCHAR2',
+            nullable: false,
+            isPrimaryKey: false,
+            isForeignKey: false,
+            length: 255,
+            description: 'Name field'
+          },
+          {
+            name: 'DESCRIPTION',
+            type: 'CLOB',
+            nullable: true,
+            isPrimaryKey: false,
+            isForeignKey: false,
+            description: 'Description field'
           }
         ],
-        indices: [
+        primaryKeys: ['ID'],
+        foreignKeys: [],
+        indexes: [
           {
-            name: 'IDX_NAME',
-            columns: ['NAME'],
+            name: 'PK_' + tableName,
+            columns: ['ID'],
             isUnique: true
           }
         ]
@@ -371,8 +408,8 @@ export function createOracleConnector(config: DatabaseConfig): ExternalDbConnect
     },
     
     async close(): Promise<void> {
-      // Placeholder for closing connection
-      console.log(`Closing connection to Oracle ${config.host}/${config.database}`);
+      console.log('Closing Oracle connection');
+      return Promise.resolve();
     }
   };
 }
